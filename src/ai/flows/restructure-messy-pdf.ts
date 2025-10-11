@@ -78,8 +78,8 @@ Specifically, you need to:
 3.  Identify and extract the content for each step.
 4.  Pull out time mentions (minutes/hours) and convert them to clear per-step estimates. If missing, suggest defaults.
 5.  Capture and deduplicate all external resources: YouTube videos, articles, docs; label them clearly (Title + URL).
-6.  Extract or create 3–5 quiz questions per session. If not present, propose simple check-for-understanding questions from the step content.
-7.  Create a checklist of any missing elements (titles, steps, estimates, resources, quizzes) that the user needs to add.
+6.  Extract quiz questions if they are present in the text. Do not generate new ones.
+7.  Create a checklist of any missing elements (titles, steps, estimates, resources, quizzes) that the user may need to add.
 
 Here is the PDF text:
 
@@ -100,4 +100,3 @@ const restructureMessyPdfFlow = ai.defineFlow(
     return output!;
   }
 );
-
