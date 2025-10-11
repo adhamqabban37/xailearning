@@ -11,22 +11,18 @@ import {
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, FileText, AlertCircle, UploadCloud, WandSparkles, Clipboard, ClipboardCheck, Edit, Link as LinkIcon } from "lucide-react";
+import { Loader2, FileText, AlertCircle, UploadCloud, Link as LinkIcon } from "lucide-react";
 import { generateCourseFromText, generateCourseFromPdf, generateCourseFromUrl } from "@/app/actions";
 import type { Course } from "@/lib/types";
-import { promptTemplate } from "@/lib/prompt-template";
 import { Card } from "../ui/card";
-import { Separator } from "../ui/separator";
 
 const formSchema = z.object({
   text: z.string().optional(),
-  promptTopic: z.string().optional(),
   url: z.string().url({ message: "Please enter a valid URL." }).optional(),
 });
 
@@ -39,10 +35,7 @@ interface ContentFormProps {
 export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: ContentFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
-  const [isCopied, setIsCopied] = useState(false);
-  const [promptValue, setPromptValue] = useState(promptTemplate.replace('[ENTER YOUR TOPIC HERE]', ''));
   const [isPasting, setIsPasting] = useState(false);
-
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -50,25 +43,11 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     resolver: zodResolver(formSchema),
     defaultValues: {
       text: "",
-      promptTopic: "Beginner's guide to React",
       url: ""
     },
   });
 
-  const topic = form.watch('promptTopic');
   const textValue = form.watch('text');
-
-  useEffect(() => {
-    const newPrompt = promptTemplate.replace('[ENTER YOUR TOPIC HERE]', topic || '');
-    setPromptValue(newPrompt);
-  }, [topic]);
-
-  useEffect(() => {
-    if (isCopied) {
-      const timer = setTimeout(() => setIsCopied(false), 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [isCopied]);
 
   async function onTextSubmit() {
     const textToSubmit = form.getValues("text");
@@ -147,88 +126,15 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     reader.readAsArrayBuffer(file);
   };
   
-  const handleCopyToClipboard = () => {
-    navigator.clipboard.writeText(promptValue);
-    setIsCopied(true);
-  };
-  
-  async function onPromptSubmit() {
-    if (!topic) {
-        form.setError("promptTopic", { message: "Please enter a topic for the prompt." });
-        return;
-    }
-    setIsLoading(true);
-    setError(null);
-    const result = await generateCourseFromText(promptValue);
-    setIsLoading(false);
-
-    if ("error" in result) {
-      setError(result.error);
-    } else {
-      onCourseGenerated(result);
-    }
-  }
-
   return (
     <Card className="w-full max-w-3xl mx-auto bg-card/50 border-primary/20 shadow-primary/10 shadow-lg p-6 rounded-xl">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onPromptSubmit)} className="space-y-6">
-            <FormField
-            control={form.control}
-            name="promptTopic"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel className="text-lg font-semibold flex items-center gap-2"><Edit className="w-5 h-5 text-primary" /> Craft with a prompt</FormLabel>
-                <FormControl>
-                    <Input placeholder="e.g., 'A beginner's guide to quantum computing'" {...field} className="text-base py-6 bg-background" />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
-            />
-
-            <div className="relative group">
-                <Textarea
-                    value={promptValue}
-                    readOnly
-                    className="min-h-[150px] text-sm bg-muted/50 border-dashed opacity-50 group-hover:opacity-100 transition-opacity"
-                />
-                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
-                        onClick={handleCopyToClipboard}
-                        title="Copy to clipboard"
-                    >
-                        {isCopied ? <ClipboardCheck className="text-green-500" /> : <Clipboard />}
-                    </Button>
-                </div>
-            </div>
-            
-            <Button type="submit" className="w-full text-lg py-7" disabled={isLoading}>
-            {isLoading ? (
-                <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Crafting Your Course...
-                </>
-            ) : (
-                <>
-                <WandSparkles className="mr-2 h-5 w-5" />
-                Generate with AI
-                </>
-            )}
-            </Button>
-        </form>
-      
-        <Separator className="my-8" />
-
         <div className="space-y-4 text-center">
-            <h3 className="text-muted-foreground font-medium">Or use other sources:</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <h3 className="text-xl font-semibold">Create Your Course</h3>
+            <p className="text-muted-foreground">Upload a document or paste text to get started.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
                 <div 
-                    className="relative border-2 border-dashed border-muted/30 rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors flex flex-col justify-center items-center"
+                    className="relative border-2 border-dashed border-muted/30 rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors flex flex-col justify-center items-center h-40"
                     onClick={() => fileInputRef.current?.click()}
                 >
                     <UploadCloud className="mx-auto h-8 w-8 text-primary" />
@@ -249,7 +155,7 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
                     control={form.control}
                     name="text"
                     render={({ field }) => (
-                    <FormItem className='h-full'>
+                    <FormItem className='h-40'>
                         {!isPasting ? (
                             <div 
                                 className="relative border-2 border-dashed border-muted/30 rounded-lg p-6 text-center cursor-text hover:border-primary hover:bg-muted/50 transition-colors h-full flex flex-col justify-center"
@@ -265,14 +171,14 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
                                     <Textarea
                                         id="paste-text-area"
                                         placeholder="Paste your messy course notes, lesson plans, or document text here..."
-                                        className="min-h-[150px] text-base"
+                                        className="min-h-[100px] text-base flex-1"
                                         {...field}
                                         autoFocus
                                     />
                                 </FormControl>
                                 {textValue && textValue.length > 100 && (
-                                     <Button type="button" onClick={onTextSubmit} disabled={isLoading}>
-                                        {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Processing...</> : 'Generate from Text'}
+                                     <Button type="button" onClick={onTextSubmit} disabled={isLoading} size="sm">
+                                        {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Analyzing...</> : 'Generate from Text'}
                                     </Button>
                                 )}
                             </div>
@@ -282,7 +188,8 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
                     )}
                 />
             </div>
-            <form onSubmit={form.handleSubmit(onUrlSubmit)} className="space-y-2 pt-4">
+            <div className="relative flex items-center text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border before:mr-4 after:ml-4">Or</div>
+            <form onSubmit={form.handleSubmit(onUrlSubmit)} className="space-y-2 pt-2">
               <div className="flex gap-2">
                 <FormField
                     control={form.control}
@@ -292,15 +199,15 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
                             <FormControl>
                                 <div className="relative flex items-center">
                                     <LinkIcon className="absolute left-3 w-5 h-5 text-muted-foreground" />
-                                    <Input placeholder="Or paste a link to an article" {...field} className="pl-10 text-base py-6 bg-background" />
+                                    <Input placeholder="Paste a link to an article or blog post" {...field} className="pl-10 text-base py-6 bg-background" />
                                 </div>
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
                 />
-                <Button type="submit" className="py-6" disabled={isLoading}>
-                    {isLoading ? <Loader2 className="animate-spin" /> : 'Go'}
+                <Button type="submit" className="py-6" disabled={isLoading || !form.watch('url')}>
+                    {isLoading ? <Loader2 className="animate-spin" /> : 'Analyze'}
                 </Button>
               </div>
             </form>
