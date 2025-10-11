@@ -114,6 +114,10 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     try {
         const formData = new FormData();
         formData.append('pdfFile', file);
+        const durationValue = form.getValues('duration');
+        if (durationValue) {
+          formData.append('duration', durationValue);
+        }
         
         const result = await generateCourseFromPdf(formData);
 
@@ -181,7 +185,7 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
                             </FormItem>
                         )}
                     />
-                    {topic && (
+                    
                        <FormField
                         control={form.control}
                         name="duration"
@@ -220,7 +224,7 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
                           </FormItem>
                         )}
                       />
-                    )}
+                    
                     <Button onClick={handleCopyToClipboard} className="w-full" size="lg">
                         <Copy />
                         Copy Prompt

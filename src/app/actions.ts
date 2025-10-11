@@ -2,6 +2,7 @@
 'use server';
 
 import { analyzeDocument } from '@/ai/flows/restructure-messy-pdf';
+import { analyzePdf } from '@/ai/flows/analyze-pdf-flow';
 import type { Course, CourseAnalysis } from '@/lib/types';
 
 function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
@@ -37,7 +38,6 @@ export async function generateCourseFromText(text: string, duration?: string): P
 
     const course = transformAnalysisToCourse(analysis);
     
-    // Add unique IDs to sessions and lessons for client-side tracking
     const courseWithIds: Course = {
       ...course,
       sessions: course.sessions.map((session, sIndex) => ({
@@ -59,18 +59,43 @@ export async function generateCourseFromText(text: string, duration?: string): P
 
 export async function generateCourseFromPdf(formData: FormData): Promise<Course | { error: string }> {
   const file = formData.get('pdfFile') as File | null;
+  const duration = formData.get('duration') as string | undefined;
 
   if (!file) {
     return { error: 'No PDF file found in the form data.' };
   }
   
+  if (file.type !== 'application/pdf') {
+    return { error: 'Invalid file type. Please upload a PDF.' };
+  }
+
   try {
-    const pdf = (await import('pdf-parse')).default;
     const fileBuffer = Buffer.from(await file.arrayBuffer());
-    const data = await pdf(fileBuffer);
-    return generateCourseFromText(data.text);
+    const pdfDataUri = `data:application/pdf;base64,${fileBuffer.toString('base64')}`;
+
+    const analysis = await analyzePdf({ pdfDataUri, duration });
+    
+    if (!analysis || !analysis.suggested_structure || analysis.suggested_structure.length === 0) {
+        return { error: 'The AI could not analyze the provided PDF. It might be empty, corrupted, or an image-only PDF.' };
+    }
+
+    const course = transformAnalysisToCourse(analysis);
+    
+    const courseWithIds: Course = {
+      ...course,
+      sessions: course.sessions.map((session, sIndex) => ({
+        ...session,
+        id: `session-${sIndex}`,
+        lessons: session.lessons.map((lesson, lIndex) => ({
+          ...lesson,
+          id: `session-${sIndex}-lesson-${lIndex}`,
+        })),
+      })),
+    };
+
+    return courseWithIds;
   } catch (error: any) {
-    console.error('Error processing PDF:', error.message);
+    console.error('Error processing PDF with AI:', error.message);
     return { error: 'Failed to process the PDF file. Please ensure it is a valid PDF.' };
   }
 }

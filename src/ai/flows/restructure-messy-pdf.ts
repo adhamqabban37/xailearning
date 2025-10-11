@@ -45,7 +45,7 @@ const SuggestedSessionSchema = z.object({
 });
 
 
-const AnalyzeDocumentOutputSchema = z.object({
+export const AnalyzeDocumentOutputSchema = z.object({
   file_check: FileCheckSchema,
   document_summary: DocumentSummarySchema,
   suggested_structure: z.array(SuggestedSessionSchema),
@@ -71,11 +71,10 @@ const analyzeDocumentPrompt = ai.definePrompt({
 
 The user has specified that the desired length of the course should be {{{duration}}}. Please tailor the number of sessions and lessons, and the depth of the content, to fit this duration.
 
-Analyze the uploaded PDF or text content and perform the following checks and outputs:
+Analyze the uploaded text content and perform the following checks and outputs:
 
 1. Extraction Debugging
 Confirm whether the text was extracted cleanly.
-Identify if the PDF seems to have scanned/image-based text.
 Detect the document type (e.g., roadmap, book, article, notes, syllabus).
 Return a summary of the document structure.
 Also, calculate and return the total estimated time required to learn all the content.
