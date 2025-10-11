@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -35,7 +36,7 @@ export function CoursePreview({ initialCourse, onClear }: CoursePreviewProps) {
 
   const totalLessons = course.sessions.reduce((acc, session) => acc + session.lessons.length, 0);
 
-  const readinessScoreValue = course.checklist ? (100 - course.checklist.length * 10) : 100;
+  const readinessScoreValue = course.readiness_score;
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">

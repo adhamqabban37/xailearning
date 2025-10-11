@@ -1,3 +1,4 @@
+
 import type { AnalyzeDocumentOutput } from '@/ai/flows/restructure-messy-pdf';
 
 export type CourseAnalysis = AnalyzeDocumentOutput;
@@ -25,6 +26,7 @@ export type Course = {
   sessions: Session[];
   checklist?: string[];
   total_estimated_time?: string;
+  readiness_score: number;
 };
 
 // Extracted for convenience

@@ -49,7 +49,7 @@ const AnalyzeDocumentOutputSchema = z.object({
   file_check: FileCheckSchema,
   document_summary: DocumentSummarySchema,
   suggested_structure: z.array(SuggestedSessionSchema),
-  readiness_score: z.string().describe('A percentage score indicating suitability for course generation.'),
+  readiness_score: z.number().min(0).max(100).describe('A percentage score (0-100) indicating suitability for course generation.'),
   improvement_recommendations: z
     .array(z.string())
     .describe('A list of suggestions to improve the content.'),
@@ -67,21 +67,21 @@ const analyzeDocumentPrompt = ai.definePrompt({
   name: 'analyzeDocumentPrompt',
   input: {schema: AnalyzeDocumentInputSchema},
   output: {schema: AnalyzeDocumentOutputSchema},
-  prompt: `You are an expert instructional designer and AI content analyst. Your job is to analyze the provided text and determine its suitability for being transformed into a structured learning course.
+  prompt: `You are an expert instructional designer and AI content analyst. Your job is to analyze the provided text and determine its suitability for being transformed into a structured learning course. Adhere strictly to the provided JSON schema for your response.
 
 The user has specified that the desired length of the course should be {{{duration}}}. Please tailor the number of sessions and lessons, and the depth of the content, to fit this duration.
 
 Analyze the uploaded PDF or text content and perform the following checks and outputs:
 
 1. Extraction Debugging
-Confirm whether the text was extracted cleanly (no broken formatting, missing words, or extra symbols).
-Identify if the PDF has scanned images (non-selectable text).
+Confirm whether the text was extracted cleanly.
+Identify if the PDF seems to have scanned/image-based text.
 Detect the document type (e.g., roadmap, book, article, notes, syllabus).
-Return a summary of the document structure (e.g., “5 sections, 20 paragraphs”).
+Return a summary of the document structure.
 Also, calculate and return the total estimated time required to learn all the content.
 
 2. Content Structuring
-Identify modules / sessions / lessons / days automatically.
+Identify modules / sessions / lessons automatically.
 Generate missing section titles if not found.
 Group similar paragraphs together logically under the right headings.
 
@@ -93,17 +93,15 @@ Report missing elements such as:
 - Repetitive or duplicated text
 
 4. Learning Suitability Report
-Determine if the text is suitable for course generation.
-Suggest improvements like “Split long section into multiple lessons” or “Add learning objectives.”
+Determine if the text is suitable for course generation with a numerical score.
+Suggest improvements like “Split long section into multiple lessons” or “Add learning objectives.” If the score is less than 85, you must provide at least 3 improvement recommendations.
 
 5. Output Format (JSON)
-Return the entire analysis in the following JSON format.
+Return the entire analysis in the specified JSON format. Do not include any commentary outside the JSON structure.
 
 Here is the text to analyze:
 
 {{{textContent}}}
-
-Return the data in the specified JSON format.
 `,
 });
 

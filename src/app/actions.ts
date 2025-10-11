@@ -7,7 +7,7 @@ import type { Course, CourseAnalysis } from '@/lib/types';
 function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
   return {
     course_title: analysis.document_summary.type,
-    description: `A course based on the analyzed document. Readiness score: ${analysis.readiness_score}`,
+    description: `An AI-generated course based on the analyzed document.`,
     total_estimated_time: analysis.document_summary.total_estimated_time,
     sessions: analysis.suggested_structure.map((session, sIndex) => ({
       ...session,
@@ -20,6 +20,7 @@ function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
       })),
     })),
     checklist: analysis.improvement_recommendations,
+    readiness_score: analysis.readiness_score,
   };
 }
 
