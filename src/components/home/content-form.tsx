@@ -15,12 +15,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, FileText, AlertCircle, UploadCloud, WandSparkles, Clipboard, ClipboardCheck, Edit } from "lucide-react";
+import { Loader2, FileText, AlertCircle, UploadCloud, WandSparkles, Clipboard, ClipboardCheck, Edit, FileType, ChevronDown, ChevronUp } from "lucide-react";
 import { generateCourseFromText, generateCourseFromPdf } from "@/app/actions";
 import type { Course } from "@/lib/types";
 import { promptTemplate } from "@/lib/prompt-template";
+import { cn } from "@/lib/utils";
+import { Card, CardContent } from "../ui/card";
+import { Separator } from "../ui/separator";
 
 const formSchema = z.object({
   text: z.string().optional(),
@@ -38,6 +40,7 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
   const [fileName, setFileName] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
   const [promptValue, setPromptValue] = useState(promptTemplate.replace('[ENTER YOUR TOPIC HERE]', ''));
+  const [showAlternatives, setShowAlternatives] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -45,7 +48,7 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     resolver: zodResolver(formSchema),
     defaultValues: {
       text: "",
-      promptTopic: "",
+      promptTopic: "Beginner's guide to React",
     },
   });
 
@@ -63,8 +66,8 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     }
   }, [isCopied]);
 
-  async function onTextSubmit(values: z.infer<typeof formSchema>) {
-    const textToSubmit = values.text || promptValue;
+  async function onTextSubmit() {
+    const textToSubmit = form.getValues("text");
     if (!textToSubmit || textToSubmit.length < 100) {
       form.setError("text", { message: "Please enter at least 100 characters." });
       return;
@@ -85,18 +88,16 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     const file = event.target.files?.[0];
     if (file) {
       setFileName(file.name);
-      setError(null);
+      onPdfSubmit(file);
     }
   };
 
-  const onPdfSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!fileInputRef.current?.files?.[0]) {
+  const onPdfSubmit = async (file: File) => {
+    if (!file) {
       setError("Please select a PDF file to upload.");
       return;
     }
 
-    const file = fileInputRef.current.files[0];
     const reader = new FileReader();
     
     reader.onload = async (e) => {
@@ -146,61 +147,73 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto bg-card p-6 rounded-xl border shadow-sm">
-      <Tabs defaultValue="text" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="text"><FileText className="mr-2 h-4 w-4" />Paste Text</TabsTrigger>
-          <TabsTrigger value="pdf"><UploadCloud className="mr-2 h-4 w-4" />Upload PDF</TabsTrigger>
-          <TabsTrigger value="prompt"><Edit className="mr-2 h-4 w-4" />Prompt</TabsTrigger>
-        </TabsList>
-        <TabsContent value="text">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onTextSubmit)} className="space-y-6 mt-4">
-              <FormField
-                control={form.control}
-                name="text"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="sr-only">Course Content</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Paste your messy course notes, lesson plans, or document text here..."
-                        className="min-h-[250px] text-base"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <Button type="submit" className="w-full text-lg py-6" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Crafting Your Course...
-                  </>
-                ) : (
-                  <>
-                    <WandSparkles className="mr-2 h-5 w-5" />
-                    Create with AI
-                  </>
-                )}
-              </Button>
-            </form>
-          </Form>
-        </TabsContent>
-        <TabsContent value="pdf">
-            <form onSubmit={onPdfSubmit} className="space-y-6 mt-4">
-              <div 
-                className="relative border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+    <Card className="w-full max-w-3xl mx-auto bg-card/50 border-primary/20 shadow-primary/10 shadow-lg p-6 rounded-xl">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onPromptSubmit)} className="space-y-6">
+            <FormField
+            control={form.control}
+            name="promptTopic"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel className="text-lg font-semibold flex items-center gap-2"><Edit className="w-5 h-5 text-primary" /> Craft with a prompt</FormLabel>
+                <FormControl>
+                    <Input placeholder="e.g., 'A beginner's guide to quantum computing'" {...field} className="text-base py-6 bg-background" />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+
+            <div className="relative group">
+                <Textarea
+                    value={promptValue}
+                    readOnly
+                    className="min-h-[150px] text-sm bg-muted/50 border-dashed opacity-50 group-hover:opacity-100 transition-opacity"
+                />
+                <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={handleCopyToClipboard}
+                        title="Copy to clipboard"
+                    >
+                        {isCopied ? <ClipboardCheck className="text-green-500" /> : <Clipboard />}
+                    </Button>
+                </div>
+            </div>
+            
+            <Button type="submit" className="w-full text-lg py-7" disabled={isLoading}>
+            {isLoading ? (
+                <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Crafting Your Course...
+                </>
+            ) : (
+                <>
+                <WandSparkles className="mr-2 h-5 w-5" />
+                Generate with AI
+                </>
+            )}
+            </Button>
+        </form>
+      </Form>
+      
+      <Separator className="my-8" />
+
+      <div className="space-y-4 text-center">
+         <h3 className="text-muted-foreground font-medium">Or use other sources:</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <div 
+                className="relative border-2 border-dashed border-muted/30 rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
                 onClick={() => fileInputRef.current?.click()}
               >
-                  <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <p className="mt-4 font-semibold text-foreground">
-                    {fileName || 'Click to upload or drag & drop'}
+                  <UploadCloud className="mx-auto h-8 w-8 text-primary" />
+                  <p className="mt-2 font-semibold text-foreground">
+                    {fileName || 'Upload a PDF'}
                   </p>
-                  <p className="text-sm text-muted-foreground">PDF (up to 5MB)</p>
+                  <p className="text-xs text-muted-foreground">The AI will read the file and build a course</p>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -210,77 +223,43 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
                   />
               </div>
 
-              <Button type="submit" className="w-full text-lg py-6" disabled={isLoading || !fileName}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Crafting from PDF...
-                  </>
-                ) : (
-                   <>
-                    <WandSparkles className="mr-2 h-5 w-5" />
-                    Create with AI
-                  </>
-                )}
-              </Button>
-            </form>
-        </TabsContent>
-        <TabsContent value="prompt">
-           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onPromptSubmit)} className="space-y-6 mt-4">
-               <FormField
+            <FormField
                 control={form.control}
-                name="promptTopic"
+                name="text"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Topic</FormLabel>
+                <FormItem>
+                    <div 
+                        className="relative border-2 border-dashed border-muted/30 rounded-lg p-6 text-center cursor-text hover:border-primary hover:bg-muted/50 transition-colors h-full flex flex-col justify-center"
+                        onClick={() => document.getElementById('paste-text-area')?.focus()}
+                    >
+                        <FileText className="mx-auto h-8 w-8 text-primary" />
+                        <p className="mt-2 font-semibold text-foreground">Paste Text</p>
+                        <p className="text-xs text-muted-foreground">Paste any text to get started</p>
+                    </div>
                     <FormControl>
-                      <Input placeholder="e.g., 'Beginner's guide to React'" {...field} />
+                        <Textarea
+                            id="paste-text-area"
+                            placeholder="Paste your messy course notes, lesson plans, or document text here..."
+                            className="min-h-[250px] text-base sr-only"
+                            {...field}
+                            onBlur={onTextSubmit}
+                        />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
+                </FormItem>
                 )}
-              />
-              <div className="relative">
-                 <Textarea
-                    value={promptValue}
-                    readOnly
-                    className="min-h-[250px] text-sm bg-muted/50"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 h-7 w-7"
-                    onClick={handleCopyToClipboard}
-                  >
-                    {isCopied ? <ClipboardCheck className="text-green-500" /> : <Clipboard />}
-                  </Button>
-              </div>
-              <Button type="submit" className="w-full text-lg py-6" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Generating Roadmap...
-                  </>
-                ) : (
-                   <>
-                    <WandSparkles className="mr-2 h-5 w-5" />
-                    Generate with Prompt
-                  </>
-                )}
-              </Button>
-            </form>
-          </Form>
-        </TabsContent>
-      </Tabs>
+            />
+        </div>
+      </div>
+
+
       {error && (
-        <Alert variant="destructive" className="mt-4">
+        <Alert variant="destructive" className="mt-6">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Oops! Something went wrong.</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-    </div>
+    </Card>
   );
 }

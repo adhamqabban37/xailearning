@@ -2,11 +2,10 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/common/header';
-import { PT_Sans } from 'next/font/google';
+import { Inter } from 'next/font/google';
 
-const ptSans = PT_Sans({ 
+const inter = Inter({ 
   subsets: ['latin'], 
-  weight: ['400', '700'],
   variable: '--font-sans' 
 });
 
@@ -21,11 +20,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet" />
       </head>
-      <body className={`font-sans antialiased min-h-screen flex flex-col ${ptSans.variable}`}>
+      <body className={`font-sans antialiased min-h-screen flex flex-col ${inter.variable}`}>
         <Header />
         <main className="flex-1">
           {children}
