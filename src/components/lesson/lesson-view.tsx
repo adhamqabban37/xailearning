@@ -69,7 +69,8 @@ export function LessonView({ initialSession }: LessonViewProps) {
     >
       <ResizablePanel defaultSize={40} minSize={20}>
         <div className="flex h-full items-center justify-center p-2">
-          <iframe src="/placeholder-pdf.pdf" className="w-full h-full border rounded-lg" title="Source Document"/>
+          {/* The source document would be displayed here. For now, it's an empty container. */}
+          <div className="w-full h-full border rounded-lg bg-secondary/20" />
         </div>
       </ResizablePanel>
       <ResizableHandle withHandle />
