@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -13,15 +13,18 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, FileText, AlertCircle, UploadCloud, WandSparkles } from "lucide-react";
+import { Loader2, FileText, AlertCircle, UploadCloud, WandSparkles, Clipboard, ClipboardCheck, Edit } from "lucide-react";
 import { generateCourseFromText, generateCourseFromPdf } from "@/app/actions";
 import type { Course } from "@/lib/types";
+import { promptTemplate } from "@/lib/prompt-template";
 
 const formSchema = z.object({
   text: z.string().optional(),
+  promptTopic: z.string().optional(),
 });
 
 interface ContentFormProps {
@@ -33,23 +36,42 @@ interface ContentFormProps {
 export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: ContentFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
+  const [promptValue, setPromptValue] = useState(promptTemplate.replace('[ENTER YOUR TOPIC HERE]', ''));
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       text: "",
+      promptTopic: "",
     },
   });
 
+  const topic = form.watch('promptTopic');
+
+  useEffect(() => {
+    const newPrompt = promptTemplate.replace('[ENTER YOUR TOPIC HERE]', topic || '');
+    setPromptValue(newPrompt);
+  }, [topic]);
+
+  useEffect(() => {
+    if (isCopied) {
+      const timer = setTimeout(() => setIsCopied(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isCopied]);
+
   async function onTextSubmit(values: z.infer<typeof formSchema>) {
-    if (!values.text || values.text.length < 100) {
+    const textToSubmit = values.text || promptValue;
+    if (!textToSubmit || textToSubmit.length < 100) {
       form.setError("text", { message: "Please enter at least 100 characters." });
       return;
     }
     setIsLoading(true);
     setError(null);
-    const result = await generateCourseFromText(values.text);
+    const result = await generateCourseFromText(textToSubmit);
     setIsLoading(false);
 
     if ("error" in result) {
@@ -82,7 +104,6 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
       if (fileBuffer) {
         setIsLoading(true);
         setError(null);
-        // Convert ArrayBuffer to Base64 string
         const base64 = Buffer.from(fileBuffer).toString('base64');
         const result = await generateCourseFromPdf(base64);
         setIsLoading(false);
@@ -101,13 +122,36 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     
     reader.readAsArrayBuffer(file);
   };
+  
+  const handleCopyToClipboard = () => {
+    navigator.clipboard.writeText(promptValue);
+    setIsCopied(true);
+  };
+  
+  async function onPromptSubmit() {
+    if (!topic) {
+        form.setError("promptTopic", { message: "Please enter a topic for the prompt." });
+        return;
+    }
+    setIsLoading(true);
+    setError(null);
+    const result = await generateCourseFromText(promptValue);
+    setIsLoading(false);
+
+    if ("error" in result) {
+      setError(result.error);
+    } else {
+      onCourseGenerated(result);
+    }
+  }
 
   return (
     <div className="w-full max-w-2xl mx-auto bg-card p-6 rounded-xl border shadow-sm">
       <Tabs defaultValue="text" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="text"><FileText className="mr-2 h-4 w-4" />Paste Text</TabsTrigger>
           <TabsTrigger value="pdf"><UploadCloud className="mr-2 h-4 w-4" />Upload PDF</TabsTrigger>
+          <TabsTrigger value="prompt"><Edit className="mr-2 h-4 w-4" />Prompt</TabsTrigger>
         </TabsList>
         <TabsContent value="text">
           <Form {...form}>
@@ -180,6 +224,54 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
                 )}
               </Button>
             </form>
+        </TabsContent>
+        <TabsContent value="prompt">
+           <Form {...form}>
+            <form onSubmit={form.handleSubmit(onPromptSubmit)} className="space-y-6 mt-4">
+               <FormField
+                control={form.control}
+                name="promptTopic"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Topic</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., 'Beginner's guide to React'" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="relative">
+                 <Textarea
+                    value={promptValue}
+                    readOnly
+                    className="min-h-[250px] text-sm bg-muted/50"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 h-7 w-7"
+                    onClick={handleCopyToClipboard}
+                  >
+                    {isCopied ? <ClipboardCheck className="text-green-500" /> : <Clipboard />}
+                  </Button>
+              </div>
+              <Button type="submit" className="w-full text-lg py-6" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Generating Roadmap...
+                  </>
+                ) : (
+                   <>
+                    <WandSparkles className="mr-2 h-5 w-5" />
+                    Generate with Prompt
+                  </>
+                )}
+              </Button>
+            </form>
+          </Form>
         </TabsContent>
       </Tabs>
       {error && (
