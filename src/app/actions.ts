@@ -3,8 +3,6 @@
 
 import { restructureMessyPdf } from '@/ai/flows/restructure-messy-pdf';
 import type { Course } from '@/lib/types';
-// Dynamically import pdf-parse to avoid server-side bundling issues.
-// import pdf from 'pdf-parse';
 
 export async function generateCourseFromText(text: string): Promise<Course | { error: string }> {
   if (!text.trim() || text.length < 100) {
@@ -41,7 +39,9 @@ export async function generateCourseFromText(text: string): Promise<Course | { e
 
 export async function generateCourseFromPdf(base64: string): Promise<Course | { error: string }> {
   try {
-    const pdf = (await import('pdf-parse')).default;
+    // Use webpackIgnore to prevent pdf-parse from being bundled by default, then require it.
+    // This is a workaround for issues with CJS modules in the Next.js App Router.
+    const pdf = (await (eval('import(/* webpackIgnore: true */ "pdf-parse")') as Promise<typeof import('pdf-parse')>)).default;
     const fileBuffer = Buffer.from(base64, 'base64');
     const data = await pdf(fileBuffer);
     return generateCourseFromText(data.text);
@@ -50,4 +50,3 @@ export async function generateCourseFromPdf(base64: string): Promise<Course | { 
     return { error: 'Failed to process the PDF file. Please ensure it is a valid PDF.' };
   }
 }
-
