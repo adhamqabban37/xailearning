@@ -23,12 +23,12 @@ function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
   };
 }
 
-export async function generateCourseFromText(text: string): Promise<Course | { error: string }> {
+export async function generateCourseFromText(text: string, duration?: string): Promise<Course | { error: string }> {
   if (!text.trim() || text.length < 100) {
     return { error: 'Please enter a substantial amount of text (at least 100 characters) to create a course.' };
   }
   try {
-    const analysis = await analyzeDocument({ textContent: text });
+    const analysis = await analyzeDocument({ textContent: text, duration: duration });
 
     if (!analysis || !analysis.suggested_structure || analysis.suggested_structure.length === 0) {
         return { error: 'The AI could not analyze the provided text. Please try again with different content.' };

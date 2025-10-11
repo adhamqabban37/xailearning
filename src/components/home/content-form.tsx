@@ -16,16 +16,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, FileText, AlertCircle, UploadCloud, Sparkles, Copy, Wand2 } from "lucide-react";
+import { Loader2, FileText, AlertCircle, UploadCloud, Sparkles, Copy, Wand2, Clock } from "lucide-react";
 import { generateCourseFromText, generateCourseFromPdf } from "@/app/actions";
 import type { Course } from "@/lib/types";
 import { Card } from "../ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { promptTemplate } from "@/lib/prompt-template";
+import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
+import { Label } from "../ui/label";
 
 
 const formSchema = z.object({
   topic: z.string().optional(),
+  duration: z.string().optional(),
   text: z.string().optional(),
   url: z.string().url({ message: "Please enter a valid URL." }).optional(),
 });
@@ -49,15 +52,20 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     resolver: zodResolver(formSchema),
     defaultValues: {
       topic: "",
+      duration: "medium",
       text: "",
       url: ""
     },
   });
 
   const topic = form.watch("topic");
+  const duration = form.watch("duration");
   const textValue = form.watch('text');
   
-  const finalPrompt = promptTemplate.replace('[TEXT_TO_ANALYZE_WILL_BE_INSERTED_HERE]', topic || 'your topic of choice');
+  const finalPrompt = promptTemplate
+    .replace('[TEXT_TO_ANALYZE_WILL_BE_INSERTED_HERE]', topic || 'your topic of choice')
+    .replace('[COURSE_LENGTH_HERE]', duration || 'medium');
+
 
   const handleCopyToClipboard = () => {
     navigator.clipboard.writeText(finalPrompt);
@@ -68,14 +76,14 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
   };
 
   async function onTextSubmit() {
-    const textToSubmit = form.getValues("text");
-    if (!textToSubmit || textToSubmit.length < 100) {
+    const values = form.getValues();
+    if (!values.text || values.text.length < 100) {
       form.setError("text", { message: "Please enter at least 100 characters." });
       return;
     }
     setIsLoading(true);
     setError(null);
-    const result = await generateCourseFromText(textToSubmit);
+    const result = await generateCourseFromText(values.text, values.duration);
     setIsLoading(false);
     setIsPasting(false);
 
@@ -173,13 +181,53 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
                             </FormItem>
                         )}
                     />
+                    {topic && (
+                       <FormField
+                        control={form.control}
+                        name="duration"
+                        render={({ field }) => (
+                          <FormItem className="space-y-3 bg-background rounded-lg border p-4">
+                            <div className="flex items-center gap-2">
+                               <Clock className="text-muted-foreground"/>
+                               <Label className="font-bold">How long should the course be?</Label>
+                            </div>
+                            <FormControl>
+                              <RadioGroup
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                                className="flex justify-between"
+                              >
+                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                  <FormControl>
+                                    <RadioGroupItem value="short" />
+                                  </FormControl>
+                                  <Label className="font-normal">Short</Label>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                  <FormControl>
+                                    <RadioGroupItem value="medium" />
+                                  </FormControl>
+                                  <Label className="font-normal">Medium</Label>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                  <FormControl>
+                                    <RadioGroupItem value="long" />
+                                  </FormControl>
+                                  <Label className="font-normal">Long</Label>
+                                </FormItem>
+                              </RadioGroup>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    )}
                     <Button onClick={handleCopyToClipboard} className="w-full" size="lg">
                         <Copy />
                         Copy Prompt
                     </Button>
                 </div>
                 <div className="md:col-span-3">
-                    <div className="h-full max-h-48 overflow-y-auto bg-background rounded-md p-4 border relative">
+                    <div className="h-full max-h-56 overflow-y-auto bg-background rounded-md p-4 border relative">
                          <p className="text-sm text-muted-foreground whitespace-pre-wrap font-code">
                             {finalPrompt}
                          </p>

@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -15,6 +16,7 @@ const AnalyzeDocumentInputSchema = z.object({
   textContent: z
     .string()
     .describe('The text content extracted from the document.'),
+  duration: z.string().optional().describe('The desired course length (e.g., short, medium, long).'),
 });
 export type AnalyzeDocumentInput = z.infer<typeof AnalyzeDocumentInputSchema>;
 
@@ -66,6 +68,8 @@ const analyzeDocumentPrompt = ai.definePrompt({
   input: {schema: AnalyzeDocumentInputSchema},
   output: {schema: AnalyzeDocumentOutputSchema},
   prompt: `You are an expert instructional designer and AI content analyst. Your job is to analyze the provided text and determine its suitability for being transformed into a structured learning course.
+
+The user has specified that the desired length of the course should be {{{duration}}}. Please tailor the number of sessions and lessons, and the depth of the content, to fit this duration.
 
 Analyze the uploaded PDF or text content and perform the following checks and outputs:
 
