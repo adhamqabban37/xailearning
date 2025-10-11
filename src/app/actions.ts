@@ -2,7 +2,6 @@
 'use server';
 
 import { restructureMessyPdf } from '@/ai/flows/restructure-messy-pdf';
-import { extractTextFromUrl } from '@/ai/flows/extract-text-from-url';
 import type { Course } from '@/lib/types';
 import type { Buffer } from 'node:buffer';
 
@@ -52,19 +51,5 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
   } catch (error) {
     console.error('Error processing PDF:', error);
     return { error: 'Failed to process the PDF file. Please ensure it is a valid PDF.' };
-  }
-}
-
-
-export async function generateCourseFromUrl(url: string): Promise<Course | { error: string }> {
-  try {
-    const { textContent } = await extractTextFromUrl({ url });
-    if (!textContent) {
-      return { error: 'Could not extract any text from the provided URL. Please try a different page.' };
-    }
-    return generateCourseFromText(textContent);
-  } catch (error) {
-    console.error('Error processing URL:', error);
-    return { error: 'Failed to process the URL. Please ensure it is a valid and accessible web page.' };
   }
 }

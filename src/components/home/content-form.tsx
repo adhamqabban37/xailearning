@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef, useTransition } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -16,8 +16,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, FileText, AlertCircle, UploadCloud, Link as LinkIcon, Sparkles, Copy, Wand2 } from "lucide-react";
-import { generateCourseFromText, generateCourseFromPdf, generateCourseFromUrl } from "@/app/actions";
+import { Loader2, FileText, AlertCircle, UploadCloud, Sparkles, Copy, Wand2 } from "lucide-react";
+import { generateCourseFromText, generateCourseFromPdf } from "@/app/actions";
 import type { Course } from "@/lib/types";
 import { Card } from "../ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -78,23 +78,6 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     const result = await generateCourseFromText(textToSubmit);
     setIsLoading(false);
     setIsPasting(false);
-
-    if ("error" in result) {
-      setError(result.error);
-    } else {
-      onCourseGenerated(result);
-    }
-  }
-
-  async function onUrlSubmit(data: z.infer<typeof formSchema>) {
-    if (!data.url) {
-      form.setError("url", { message: "Please enter a URL." });
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    const result = await generateCourseFromUrl(data.url);
-    setIsLoading(false);
 
     if ("error" in result) {
       setError(result.error);
@@ -269,29 +252,6 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
                         )}
                     />
                 </div>
-                
-                <form onSubmit={form.handleSubmit(onUrlSubmit)} className="space-y-2 pt-4">
-                  <div className="flex gap-2">
-                    <FormField
-                        control={form.control}
-                        name="url"
-                        render={({ field }) => (
-                            <FormItem className="flex-1">
-                                <FormControl>
-                                    <div className="relative flex items-center">
-                                        <LinkIcon className="absolute left-3 w-5 h-5 text-muted-foreground" />
-                                        <Input placeholder="Paste a link to an article or blog post" {...field} className="pl-10 text-base py-6 bg-background" />
-                                    </div>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <Button type="submit" className="py-6" disabled={isLoading || !form.watch('url')}>
-                        {isLoading ? <Loader2 className="animate-spin" /> : 'Analyze'}
-                    </Button>
-                  </div>
-                </form>
             </div>
         </div>
       </Form>
