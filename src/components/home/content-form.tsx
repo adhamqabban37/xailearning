@@ -40,6 +40,7 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
   const [error, setError] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [isPasting, setIsPasting] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const { toast } = useToast();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -119,29 +120,47 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     setIsLoading(true);
     setError(null);
     
-    const reader = new FileReader();
-    reader.readAsArrayBuffer(file);
-    
-    reader.onload = async (e) => {
-      const fileBuffer = e.target?.result as ArrayBuffer;
-      if (fileBuffer) {
-        // We need to convert ArrayBuffer to Buffer for the server action
+    try {
+        const fileBuffer = await file.arrayBuffer();
         const result = await generateCourseFromPdf(Buffer.from(fileBuffer));
         setIsLoading(false);
         if ("error" in result) {
-          setError(result.error);
+            setError(result.error);
         } else {
-          onCourseGenerated(result);
+            onCourseGenerated(result);
         }
-      }
-    };
-    
-    reader.onerror = () => {
-      setError("Failed to read the file.");
-      setIsLoading(false);
-    };
+    } catch (e) {
+        setError("Failed to read the file.");
+        setIsLoading(false);
+    }
   };
   
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingOver(true);
+  };
+  
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault(); // This is necessary to allow dropping
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type === 'application/pdf') {
+      setFileName(file.name);
+      onPdfSubmit(file);
+    } else {
+      setError("Please drop a valid PDF file.");
+    }
+  };
+
   return (
     <Card className="w-full max-w-4xl mx-auto bg-card/50 border-primary/20 shadow-primary/10 shadow-lg p-6 rounded-xl">
       <Form {...form}>
@@ -187,12 +206,17 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
             <div className="space-y-4 text-center">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
                     <div 
-                        className="relative border-2 border-dashed border-muted/30 rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors flex flex-col justify-center items-center h-40"
+                        className="relative border-2 border-dashed border-muted/30 rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors flex flex-col justify-center items-center h-40 data-[dragging-over=true]:border-primary data-[dragging-over=true]:bg-primary/10"
                         onClick={() => fileInputRef.current?.click()}
+                        onDragEnter={handleDragEnter}
+                        onDragLeave={handleDragLeave}
+                        onDragOver={handleDragOver}
+                        onDrop={handleDrop}
+                        data-dragging-over={isDraggingOver}
                     >
                         <UploadCloud className="mx-auto h-8 w-8 text-primary" />
                         <p className="mt-2 font-semibold text-foreground">
-                            {fileName || 'Upload a PDF'}
+                            {fileName || (isDraggingOver ? 'Drop the PDF here!' : 'Upload or Drag & Drop a PDF')}
                         </p>
                         <p className="text-xs text-muted-foreground">The AI will read the file and build a course</p>
                         <input
