@@ -99,26 +99,26 @@ export function LessonView({ session }: LessonViewProps) {
         <Accordion type="multiple" defaultValue={session.steps.length > 0 ? [session.steps[0].id] : []}>
           {session.steps.map(step => (
             <AccordionItem value={step.id} key={step.id}>
-              <AccordionTrigger className="hover:no-underline">
-                <div className="flex items-center gap-4 w-full mr-4">
-                  <Checkbox
+              <div className="flex items-center gap-4 w-full mr-4">
+                 <Checkbox
                     id={`cb-${step.id}`}
                     checked={!!completedSteps[step.id]}
                     onCheckedChange={(checked) => handleStepCompletion(step, !!checked)}
-                    onClick={(e) => e.stopPropagation()}
                     aria-label={`Mark step ${step.title} as complete`}
+                    className="ml-4"
                   />
-                  <div className="flex-1 text-left">
-                    <p className={`font-medium ${completedSteps[step.id] ? 'line-through text-muted-foreground' : ''}`}>
-                      {step.title}
-                    </p>
-                    <div className="flex items-center text-xs text-muted-foreground mt-1">
-                      <Clock className="w-3 h-3 mr-1.5" />
-                      {step.timeEstimateMinutes ? `${step.timeEstimateMinutes} min` : '5 min (est.)'}
+                <AccordionTrigger className="hover:no-underline flex-1">
+                    <div className="flex-1 text-left">
+                      <p className={`font-medium ${completedSteps[step.id] ? 'line-through text-muted-foreground' : ''}`}>
+                        {step.title}
+                      </p>
+                      <div className="flex items-center text-xs text-muted-foreground mt-1">
+                        <Clock className="w-3 h-3 mr-1.5" />
+                        {step.timeEstimateMinutes ? `${step.timeEstimateMinutes} min` : '5 min (est.)'}
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </AccordionTrigger>
+                </AccordionTrigger>
+              </div>
               <AccordionContent className="pl-12 space-y-4">
                 <div className="prose prose-sm dark:prose-invert max-w-none">
                   {step.content}
