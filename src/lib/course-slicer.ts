@@ -1,6 +1,6 @@
-import type { Step, StoredCourse, StudySession } from './types';
+import type { Lesson, StoredCourse, StudySession } from './types';
 
-const DEFAULT_STEP_TIME = 5; // 5 minutes
+const DEFAULT_LESSON_TIME = 5; // 5 minutes
 
 export function sliceSession(
   storedCourse: StoredCourse,
@@ -9,50 +9,46 @@ export function sliceSession(
 
   const { course, progress } = storedCourse;
   
-  const allSteps = course.sessions.flatMap(s => s.steps);
-  const uncompletedSteps = allSteps.filter(step => !progress[step.id]);
+  const allLessons = course.sessions.flatMap(s => s.lessons);
+  const uncompletedLessons = allLessons.filter(lesson => !progress[lesson.id]);
 
-  if (uncompletedSteps.length === 0) {
+  if (uncompletedLessons.length === 0) {
     return null; // Course is complete
   }
   
-  // Find the session containing the first uncompleted step
-  const firstUncompletedStep = uncompletedSteps[0];
-  const sessionIndex = course.sessions.findIndex(s => s.steps.some(step => step.id === firstUncompletedStep.id));
-  const currentSession = course.sessions[sessionIndex];
+  const firstUncompletedLesson = uncompletedLessons[0];
+  const sessionIndex = course.sessions.findIndex(s => s.lessons.some(lesson => lesson.id === firstUncompletedLesson.id));
+  const currentSessionInfo = course.sessions[sessionIndex];
 
   let cumulativeTime = 0;
-  const sessionSteps: Step[] = [];
+  const sessionLessons: Lesson[] = [];
 
-  for (const step of uncompletedSteps) {
-    // Only add steps from the current or subsequent sessions, but keep them grouped by their original session
-    const stepOriginalSessionIndex = course.sessions.findIndex(s => s.steps.some(s_ => s_.id === step.id));
-    if (stepOriginalSessionIndex < sessionIndex) continue;
+  for (const lesson of uncompletedLessons) {
+    const lessonOriginalSessionIndex = course.sessions.findIndex(s => s.lessons.some(l => l.id === lesson.id));
+    if (lessonOriginalSessionIndex < sessionIndex) continue;
 
-
-    const stepTime = step.timeEstimateMinutes || DEFAULT_STEP_TIME;
+    const lessonTime = lesson.timeEstimateMinutes || DEFAULT_LESSON_TIME;
     
-    // If the session is empty, always add at least one step regardless of duration
-    if (sessionSteps.length === 0) {
-        sessionSteps.push(step);
-        cumulativeTime += stepTime;
+    if (sessionLessons.length === 0) {
+        sessionLessons.push(lesson);
+        cumulativeTime += lessonTime;
         continue;
     }
 
-    if (cumulativeTime + stepTime <= durationMinutes) {
-      cumulativeTime += stepTime;
-      sessionSteps.push(step);
+    if (cumulativeTime + lessonTime <= durationMinutes) {
+      cumulativeTime += lessonTime;
+      sessionLessons.push(lesson);
     } else {
-      break; // Stop adding steps if the next one exceeds the duration
+      break; 
     }
   }
   
   return {
-    title: currentSession.title,
-    steps: sessionSteps,
+    title: currentSessionInfo.session_title,
+    lessons: sessionLessons,
     sessionIndex: sessionIndex,
     durationMinutes: durationMinutes,
-    totalStepsInCourse: allSteps.length,
+    totalStepsInCourse: allLessons.length,
     completedStepsInCourse: Object.keys(progress).length,
   };
 }

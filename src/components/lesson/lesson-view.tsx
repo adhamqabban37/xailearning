@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import type { StudySession } from '@/lib/types';
+import type { StudySession, Lesson } from '@/lib/types';
 import { useCourseStorage } from '@/hooks/use-course-storage';
 import { useRouter } from 'next/navigation';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
@@ -21,13 +21,13 @@ interface LessonViewProps {
 export function LessonView({ initialSession }: LessonViewProps) {
   const router = useRouter();
   const [session, setSession] = useState(initialSession);
-  const { updateStepProgress, startNewSession, clearCourse, storedCourse } = useCourseStorage();
+  const { updateStepProgress, startNewSession, storedCourse } = useCourseStorage();
 
   const [completedSteps, setCompletedSteps] = useState<Record<string, boolean>>(() => {
     if (!storedCourse?.progress) return {};
-    return session.steps.reduce((acc, step) => {
-      if (storedCourse.progress[step.id]) {
-        acc[step.id] = true;
+    return session.lessons.reduce((acc, lesson) => {
+      if (storedCourse.progress[lesson.id]) {
+        acc[lesson.id] = true;
       }
       return acc;
     }, {} as Record<string, boolean>);
@@ -39,14 +39,11 @@ export function LessonView({ initialSession }: LessonViewProps) {
     setCompletedSteps(prev => ({ ...prev, [stepId]: isChecked }));
     if (isChecked) {
       updateStepProgress(stepId, 'completed');
-    } else {
-      // In a real app, you might want to handle un-completing a step
-      // For now, we only track completion
     }
   };
 
   const completedCount = Object.keys(completedSteps).length;
-  const totalStepsInSession = session.steps.length;
+  const totalStepsInSession = session.lessons.length;
   const isSessionComplete = completedCount === totalStepsInSession;
 
   const handleNextSession = () => {
@@ -55,13 +52,11 @@ export function LessonView({ initialSession }: LessonViewProps) {
       setSession(newSession);
       setCompletedSteps({});
     } else {
-      // Course is finished, or no more sessions
       handleFinish();
     }
   };
 
   const handleFinish = () => {
-    // We don't clear the course so the user can review it from the homepage
     router.push('/');
   };
 
@@ -88,19 +83,19 @@ export function LessonView({ initialSession }: LessonViewProps) {
                 
                 <AskTheDocumentCard />
 
-                {session.steps.map(step => (
-                    <div key={step.id} className="flex items-start gap-4">
+                {session.lessons.map(lesson => (
+                    <div key={lesson.id} className="flex items-start gap-4">
                          <Checkbox
-                            id={`cb-${step.id}`}
+                            id={`cb-${lesson.id}`}
                             className='mt-8'
-                            onCheckedChange={(checked) => handleStepComplete(step.id, !!checked)}
-                            checked={isStepCompleted(step.id)}
-                            aria-label={`Mark step ${step.title} as complete`}
+                            onCheckedChange={(checked) => handleStepComplete(lesson.id, !!checked)}
+                            checked={isStepCompleted(lesson.id)}
+                            aria-label={`Mark lesson ${lesson.lesson_title} as complete`}
                         />
-                        <div className={`flex-1 transition-opacity space-y-4 ${isStepCompleted(step.id) ? 'opacity-50' : 'opacity-100'}`}>
-                           <ConceptCard step={step} />
-                           {step.resources && step.resources.length > 0 && <ResourcesPanel resources={step.resources} />}
-                           {step.quizQuestions && step.quizQuestions.length > 0 && <QuizCard questions={step.quizQuestions} />}
+                        <div className={`flex-1 transition-opacity space-y-4 ${isStepCompleted(lesson.id) ? 'opacity-50' : 'opacity-100'}`}>
+                           <ConceptCard lesson={lesson} />
+                           {lesson.resources && lesson.resources.length > 0 && <ResourcesPanel resources={lesson.resources} />}
+                           {lesson.quiz && lesson.quiz.length > 0 && <QuizCard questions={lesson.quiz} />}
                         </div>
                     </div>
                 ))}

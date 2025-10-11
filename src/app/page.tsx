@@ -7,9 +7,8 @@ import { useCourseStorage } from '@/hooks/use-course-storage';
 import { useRouter } from 'next/navigation';
 import { ContentForm } from '@/components/home/content-form';
 import { CoursePreview } from '@/components/home/course-preview';
-import { Loader2, BookOpenCheck, ChevronRight } from 'lucide-react';
+import { Loader2, BookOpenCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 
 export default function Home() {
   const [course, setCourse] = useState<Course | null>(null);
@@ -36,35 +35,38 @@ export default function Home() {
   }
   
   if (course) {
-    const hasProgress = storedCourse && storedCourse.progress && Object.keys(storedCourse.progress).length > 0;
-    const totalSteps = course.sessions.reduce((acc, s) => acc + s.steps.length, 0);
-    const completedSteps = hasProgress ? Object.keys(storedCourse.progress).length : 0;
+    return <CoursePreview initialCourse={course} onClear={handleStartOver} />;
+  }
 
-    return (
-      <div className="container mx-auto px-4 py-8">
-        {hasProgress ? (
-          <div className="text-center my-8 p-8 bg-card border rounded-lg shadow-lg max-w-2xl mx-auto border-primary/20 shadow-primary/10">
-            <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-6">
-                <BookOpenCheck className="text-primary h-8 w-8"/>
-            </div>
-            <h2 className="text-3xl font-bold mb-2">Welcome Back!</h2>
-            <p className="text-muted-foreground mb-6 text-lg">You're making great progress. Ready to dive back in?</p>
-            
-            <div className="w-full bg-secondary rounded-full h-2.5 mb-6">
-                <div className="bg-primary h-2.5 rounded-full" style={{ width: `${(completedSteps/totalSteps)*100}%` }}></div>
-            </div>
-            <p className="text-sm text-muted-foreground mb-6">{completedSteps} of {totalSteps} steps completed</p>
+  if (storedCourse?.course) {
+      const hasProgress = storedCourse.progress && Object.keys(storedCourse.progress).length > 0;
+      const totalSteps = storedCourse.course.sessions.reduce((acc, s) => acc + s.lessons.length, 0);
+      const completedSteps = hasProgress ? Object.keys(storedCourse.progress).length : 0;
+      return (
+        <div className="container mx-auto px-4 py-8">
+            <div className="text-center my-8 p-8 bg-card border rounded-lg shadow-lg max-w-2xl mx-auto border-primary/20 shadow-primary/10">
+              <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-6">
+                  <BookOpenCheck className="text-primary h-8 w-8"/>
+              </div>
+              <h2 className="text-3xl font-bold mb-2">Welcome Back!</h2>
+              <p className="text-muted-foreground mb-6 text-lg">You have a course in progress. Ready to dive back in?</p>
+              
+              {totalSteps > 0 && (
+                <>
+                  <div className="w-full bg-secondary rounded-full h-2.5 mb-6">
+                      <div className="bg-primary h-2.5 rounded-full" style={{ width: `${(completedSteps/totalSteps)*100}%` }}></div>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-6">{completedSteps} of {totalSteps} lessons completed</p>
+                </>
+              )}
 
-            <div className="flex justify-center gap-4">
-              <Button onClick={handleResume} size="lg">Resume Learning</Button>
-              <Button onClick={handleStartOver} variant="outline" size="lg">Start a New Course</Button>
+              <div className="flex justify-center gap-4">
+                <Button onClick={handleResume} size="lg">Resume Learning</Button>
+                <Button onClick={handleStartOver} variant="outline" size="lg">Start a New Course</Button>
+              </div>
             </div>
-          </div>
-        ) : (
-          <CoursePreview initialCourse={course} onClear={handleStartOver} />
-        )}
-      </div>
-    );
+        </div>
+      )
   }
 
   return (
@@ -84,25 +86,6 @@ export default function Home() {
       <section className="mb-16">
         <ContentForm onCourseGenerated={setCourse} isLoading={isLoading} setIsLoading={setIsLoading} />
       </section>
-
-      <section>
-        <h2 className="text-3xl font-bold text-center mb-8">How It Works</h2>
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          <Card className="bg-card/50 border-primary/20 text-center p-6">
-            <h3 className="text-xl font-bold text-primary mb-2">1. Craft Your Content</h3>
-            <p className="text-muted-foreground">Use our optimized AI prompt to generate high-quality course material on any topic with your favorite AI tool.</p>
-          </Card>
-          <Card className="bg-card/50 border-primary/20 text-center p-6">
-            <h3 className="text-xl font-bold text-primary mb-2">2. Upload Your Document</h3>
-            <p className="text-muted-foreground">Bring your generated PDF, text, or a link to an existing article into Course Crafter.</p>
-          </Card>
-          <Card className="bg-card/50 border-primary/20 text-center p-6">
-            <h3 className="text-xl font-bold text-primary mb-2">3. Start Learning</h3>
-            <p className="text-muted-foreground">We transform your document into an interactive, engaging course with quizzes, resources, and progress tracking.</p>
-          </Card>
-        </div>
-      </section>
-
     </div>
   );
 }

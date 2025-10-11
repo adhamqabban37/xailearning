@@ -1,31 +1,34 @@
 import type { RestructureMessyPdfOutput } from '@/ai/flows/restructure-messy-pdf';
 
-type AugmentedStep = RestructureMessyPdfOutput['sessions'][0]['steps'][0] & { id: string };
-type AugmentedSession = Omit<RestructureMessyPdfOutput['sessions'][0], 'steps'> & {
-  id: string;
-  steps: AugmentedStep[];
-};
+// Raw types from the AI schema
+type RawLesson = RestructureMessyPdfOutput['sessions'][0]['lessons'][0];
+type RawSession = Omit<RestructureMessyPdfOutput['sessions'][0], 'lessons'>;
 
+// Augmented types with client-side IDs
+export type Lesson = RawLesson & { id: string };
+export type Session = RawSession & { id: string; lessons: Lesson[]; };
+
+// Main course type
 export type Course = Omit<RestructureMessyPdfOutput, 'sessions'> & {
-  sessions: AugmentedSession[];
+  sessions: Session[];
 };
 
-export type Session = Course['sessions'][0];
-export type Step = Session['steps'][0];
-export type Resource = NonNullable<Step['resources']>[0];
-export type QuizQuestion = NonNullable<Step['quizQuestions']>[0];
+// Extracted for convenience
+export type Resource = NonNullable<Lesson['resources']>[0];
+export type QuizQuestion = NonNullable<Lesson['quiz']>[0];
 
+// Storage types
 export type StoredCourse = {
   course: Course;
-  progress: Record<string, 'completed'>; // Key is step.id
+  progress: Record<string, 'completed'>; // Key is lesson.id
   createdAt: string;
 };
 
 export type StudySession = {
   title: string;
-  steps: Step[];
+  lessons: Lesson[];
   sessionIndex: number;
   durationMinutes: number;
-  totalStepsInCourse: number;
+  totalStepsInCourse: number; // Note: "steps" are now "lessons"
   completedStepsInCourse: number;
 };

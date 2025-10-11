@@ -18,39 +18,39 @@ const RestructureMessyPdfInputSchema = z.object({
 });
 export type RestructureMessyPdfInput = z.infer<typeof RestructureMessyPdfInputSchema>;
 
+const ResourceSchema = z.object({
+  title: z.string().describe('The title of the resource.'),
+  type: z.string().describe('The type of resource (e.g., video, article).'),
+  url: z.string().url().describe('The URL of the resource.'),
+});
+
+const QuizQuestionSchema = z.object({
+    question: z.string().describe('The quiz question.'),
+    options: z.array(z.string()).optional().describe('A list of possible answers for multiple-choice questions.'),
+    answer: z.string().describe('The correct answer to the question.'),
+});
+
+const LessonSchema = z.object({
+    lesson_title: z.string().describe("The title of the lesson."),
+    content_summary: z.string().describe("A summary of the lesson's content."),
+    resources: z.array(ResourceSchema).optional().describe("A list of external resources for the lesson."),
+    quiz: z.array(QuizQuestionSchema).optional().describe("A list of quiz questions for the lesson."),
+    timeEstimateMinutes: z.number().optional().describe('Estimated time in minutes to complete the lesson.'),
+});
+
+
+const SessionSchema = z.object({
+  session_title: z.string().describe('The title of the session.'),
+  estimated_time: z.string().optional().describe('Estimated time to complete the session.'),
+  lessons: z.array(LessonSchema),
+});
+
+
 const RestructureMessyPdfOutputSchema = z.object({
-  sessions: z.array(
-    z.object({
-      title: z.string().describe('The title of the session.'),
-      steps: z.array(
-        z.object({
-          title: z.string().describe('The title of the step.'),
-          content: z.string().describe('The content of the step.'),
-          timeEstimateMinutes: z
-            .number()
-            .optional()
-            .describe('Estimated time in minutes to complete the step.'),
-          resources: z
-            .array(
-              z.object({
-                title: z.string().describe('The title of the resource.'),
-                url: z.string().describe('The URL of the resource.'),
-              })
-            )
-            .optional(),
-          quizQuestions: z
-            .array(
-              z.object({
-                question: z.string().describe('The quiz question.'),
-                answer: z.string().describe('The answer to the question.'),
-              })
-            )
-            .optional(),
-        })
-      ),
-    })
-  ),
-  missingElementsChecklist: z
+  course_title: z.string().describe("The main title of the generated course."),
+  description: z.string().describe("A brief description of the course."),
+  sessions: z.array(SessionSchema),
+  checklist: z
     .array(z.string())
     .optional()
     .describe('A checklist of missing elements in the PDF.'),
@@ -68,24 +68,70 @@ const restructureMessyPdfPrompt = ai.definePrompt({
   name: 'restructureMessyPdfPrompt',
   input: {schema: RestructureMessyPdfInputSchema},
   output: {schema: RestructureMessyPdfOutputSchema},
-  prompt: `You are an AI expert in course content organization.
-Your task is to take the text extracted from a messy PDF and restructure it into a coherent course structure.
+  prompt: `You are an expert instructional designer, AI researcher, and content curator. Your job is to analyze any given text, PDF, or document and transform it into a structured, interactive learning experience for the learner.
 
-Specifically, you need to:
+OBJECTIVE:
+Take the provided text (which can come from a prompt, document, or pasted content) and convert it into a complete AI-powered learning roadmap, ready for use as an online course.
 
-1.  Detect sessions, lessons, and steps even if the labels vary (e.g., Day/Module/Week/Lesson).
-2.  Suggest missing titles for sessions and steps if they are not clearly provided in the text.
-3.  Identify and extract the content for each step.
-4.  Pull out time mentions (minutes/hours) and convert them to clear per-step estimates. If missing, suggest defaults.
-5.  Capture and deduplicate all external resources: YouTube videos, articles, docs; label them clearly (Title + URL).
-6.  Extract quiz questions if they are present in the text. Do not generate new ones.
-7.  Create a checklist of any missing elements (titles, steps, estimates, resources, quizzes) that the user may need to add.
+🧠 MANDATORY ANALYSIS INSTRUCTIONS
 
-Here is the PDF text:
+Course Structure Detection
+
+Identify and organize the document into clear sessions, lessons, and steps, even if the text uses different labels (e.g., Day 1, Module 2, Part 3, etc.).
+
+Generate missing or unclear titles automatically for any unnamed sections.
+
+Add short, descriptive subtitles if missing.
+
+Time Estimates
+
+Detect and extract all mentions of time (e.g., “15 minutes,” “2 hours”).
+
+If missing, suggest reasonable default estimates (e.g., 10 minutes per lesson, 5 minutes per quiz).
+
+Resource Extraction
+
+Extract all external resources such as YouTube videos, articles, PDFs, or references.
+
+If none exist, search and recommend 3–5 high-quality external resources (YouTube, official docs, blogs) relevant to the lesson topics.
+
+Always return resources in this format:
+
+{
+  "title": "Intro to Neural Networks - YouTube",
+  "type": "video",
+  "url": "https://www.youtube.com/watch?v=aircAruvnKk"
+}
+
+
+Quiz Generation
+
+Create 3–5 quiz questions per session that check for understanding of the material.
+
+Use multiple-choice, true/false, or short-answer formats.
+
+Example format:
+
+{
+  "question": "What is a neural network?",
+  "options": ["A computer", "A learning algorithm", "A data storage system"],
+  "answer": "A learning algorithm"
+}
+
+
+Checklist Creation
+
+Generate a missing-elements checklist, noting anything the user needs to complete or clarify (e.g., missing titles, unclear time estimates, no external resources).
+
+Formatting & Output
+
+Return your entire analysis in clean, organized JSON for easy parsing.
+
+Here is the text to analyze:
 
 {{{pdfText}}}
 
-Return the data in JSON format based on the following schema:
+Return the data in the specified JSON format.
 `,
 });
 
@@ -97,6 +143,9 @@ const restructureMessyPdfFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await restructureMessyPdfPrompt(input);
-    return output!;
+    if (!output) {
+      throw new Error("The AI failed to generate a course structure.");
+    }
+    return output;
   }
 );

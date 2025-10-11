@@ -4,7 +4,7 @@
 import { restructureMessyPdf } from '@/ai/flows/restructure-messy-pdf';
 import { extractTextFromUrl } from '@/ai/flows/extract-text-from-url';
 import type { Course } from '@/lib/types';
-import pdf from 'pdf-parse/lib/pdf-parse';
+import pdf from 'pdf-parse';
 
 export async function generateCourseFromText(text: string): Promise<Course | { error: string }> {
   if (!text.trim() || text.length < 100) {
@@ -17,25 +17,23 @@ export async function generateCourseFromText(text: string): Promise<Course | { e
         return { error: 'The AI could not structure a course from the provided text. Please try again with different content.' };
     }
 
-    // Add unique IDs to sessions and steps for client-side tracking
+    // Add unique IDs to sessions and lessons for client-side tracking
     const courseWithIds: Course = {
       ...structuredContent,
       sessions: structuredContent.sessions.map((session, sIndex) => ({
         ...session,
-        title: session.title || `Session ${sIndex + 1}`,
         id: `session-${sIndex}`,
-        steps: session.steps.map((step, stIndex) => ({
-          ...step,
-          title: step.title || `Step ${stIndex + 1}`,
-          id: `session-${sIndex}-step-${stIndex}`,
+        lessons: session.lessons.map((lesson, lIndex) => ({
+          ...lesson,
+          id: `session-${sIndex}-lesson-${lIndex}`,
         })),
       })),
     };
 
     return courseWithIds;
-  } catch (e) {
+  } catch (e: any) {
     console.error('Error generating course:', e);
-    return { error: 'An unexpected error occurred while generating the course. Please try again later.' };
+    return { error: e.message || 'An unexpected error occurred while generating the course. Please try again later.' };
   }
 }
 

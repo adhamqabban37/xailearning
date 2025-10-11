@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useCourseStorage } from '@/hooks/use-course-storage';
 import { CheckCircle, Clock, FileText, Link, ListChecks, HelpCircle, AlertCircle } from 'lucide-react';
-import type { Course } from '@/lib/types';
+import type { Course, Lesson } from '@/lib/types';
 import { Badge } from '../ui/badge';
 
 interface CoursePreviewProps {
@@ -32,25 +32,25 @@ export function CoursePreview({ initialCourse, onClear }: CoursePreviewProps) {
     }
   };
 
-  const totalSteps = course.sessions.reduce((acc, session) => acc + session.steps.length, 0);
+  const totalLessons = course.sessions.reduce((acc, session) => acc + session.lessons.length, 0);
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-3xl font-headline">Your New Course Outline</CardTitle>
+          <CardTitle className="text-3xl font-headline">{course.course_title}</CardTitle>
           <CardDescription>
-            Review the generated structure. You can start a focused study session when you're ready.
+            {course.description}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {course.missingElementsChecklist && course.missingElementsChecklist.length > 0 && (
+          {course.checklist && course.checklist.length > 0 && (
             <Alert>
               <HelpCircle className="h-4 w-4" />
               <AlertTitle>Suggestions for Improvement</AlertTitle>
               <AlertDescription>
                 <ul className="list-disc pl-5 space-y-1 mt-2">
-                  {course.missingElementsChecklist.map((item, index) => (
+                  {course.checklist.map((item, index) => (
                     <li key={index}>{item}</li>
                   ))}
                 </ul>
@@ -62,32 +62,32 @@ export function CoursePreview({ initialCourse, onClear }: CoursePreviewProps) {
             <h3 className="font-bold mb-2">Course at a Glance:</h3>
             <div className="flex space-x-4 text-sm text-muted-foreground">
                 <div className="flex items-center"><FileText className="w-4 h-4 mr-1.5"/> {course.sessions.length} sessions</div>
-                <div className="flex items-center"><ListChecks className="w-4 h-4 mr-1.5"/> {totalSteps} steps</div>
+                <div className="flex items-center"><ListChecks className="w-4 h-4 mr-1.5"/> {totalLessons} lessons</div>
             </div>
           </div>
 
-          <Accordion type="single" collapsible className="w-full">
+          <Accordion type="single" collapsible className="w-full" defaultValue="session-0">
             {course.sessions.map((session, sIndex) => (
               <AccordionItem value={`session-${sIndex}`} key={session.id}>
                 <AccordionTrigger className="text-lg font-semibold hover:no-underline">
                   <div className="flex items-center gap-4">
                     <span className="text-primary">{`Session ${sIndex + 1}`}</span>
-                    <span>{session.title}</span>
+                    <span>{session.session_title}</span>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent>
                   <ul className="space-y-2 pl-4">
-                    {session.steps.map((step, stIndex) => (
-                      <li key={step.id} className="border-l-2 pl-4 py-1 text-muted-foreground">
-                        <p className="font-medium text-foreground">{step.title}</p>
+                    {session.lessons.map((lesson, lIndex) => (
+                      <li key={lesson.id} className="border-l-2 pl-4 py-1 text-muted-foreground">
+                        <p className="font-medium text-foreground">{lesson.lesson_title}</p>
                         <div className="flex items-center text-xs mt-1">
                           <Clock className="w-3 h-3 mr-1.5" /> 
-                          {step.timeEstimateMinutes ? `${step.timeEstimateMinutes} min` : 'Time not specified'}
+                          {lesson.timeEstimateMinutes ? `${lesson.timeEstimateMinutes} min` : 'Time not specified'}
                         </div>
-                        {step.resources && step.resources.length > 0 && (
+                        {lesson.resources && lesson.resources.length > 0 && (
                             <div className="flex items-center text-xs mt-1 text-blue-500">
                                 <Link className="w-3 h-3 mr-1.5" />
-                                {step.resources.length} resource(s)
+                                {lesson.resources.length} resource(s)
                             </div>
                         )}
                       </li>
