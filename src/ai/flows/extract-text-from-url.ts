@@ -50,10 +50,9 @@ const extractTextFromUrlTool = ai.defineTool(
 
 const extractTextFromUrlPrompt = ai.definePrompt({
   name: 'extractTextFromUrlPrompt',
-  input: {schema: ExtractTextFromUrlInputSchema},
+  input: {schema: z.object({htmlContent: z.string()})},
   output: {schema: ExtractTextFromUrlOutputSchema},
-  tools: [extractTextFromUrlTool],
-  prompt: `You are a web content extraction expert. Your task is to analyze the provided HTML content from the given URL and extract only the main article text. 
+  prompt: `You are a web content extraction expert. Your task is to analyze the provided HTML content and extract only the main article text. 
   
   Exclude all non-essential elements such as:
   - Navigation bars
@@ -65,7 +64,7 @@ const extractTextFromUrlPrompt = ai.definePrompt({
   
   Focus on returning the clean, readable, primary content of the page.
   
-  URL to process: {{{url}}}
+  HTML Content to process: {{{htmlContent}}}
   `,
 });
 
@@ -76,10 +75,15 @@ const extractTextFromUrlFlow = ai.defineFlow(
     outputSchema: ExtractTextFromUrlOutputSchema,
   },
   async (input: ExtractTextFromUrlInput) => {
-    const {output} = await extractTextFromUrlPrompt(input);
+    const htmlContent = await extractTextFromUrlTool(input);
+    
+    if (!htmlContent) {
+        throw new Error("Could not retrieve content from the URL.");
+    }
+
+    const {output} = await extractTextFromUrlPrompt({htmlContent});
 
     return output!;
   }
 );
-
     
