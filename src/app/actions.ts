@@ -39,8 +39,15 @@ export async function generateCourseFromText(text: string): Promise<Course | { e
   }
 }
 
-export async function generateCourseFromPdf(fileBuffer: Buffer): Promise<Course | { error: string }> {
+export async function generateCourseFromPdf(formData: FormData): Promise<Course | { error: string }> {
+  const file = formData.get('pdfFile') as File | null;
+
+  if (!file) {
+    return { error: 'No PDF file found in the form data.' };
+  }
+  
   try {
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
     const data = await pdf(fileBuffer);
     return generateCourseFromText(data.text);
   } catch (error) {
@@ -62,3 +69,4 @@ export async function generateCourseFromUrl(url: string): Promise<Course | { err
     return { error: 'Failed to process the URL. Please ensure it is a valid and accessible web page.' };
   }
 }
+

@@ -121,8 +121,11 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     setError(null);
     
     try {
-        const fileBuffer = await file.arrayBuffer();
-        const result = await generateCourseFromPdf(Buffer.from(fileBuffer));
+        const formData = new FormData();
+        formData.append('pdfFile', file);
+        
+        const result = await generateCourseFromPdf(formData);
+
         setIsLoading(false);
         if ("error" in result) {
             setError(result.error);
