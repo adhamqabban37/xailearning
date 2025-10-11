@@ -3,7 +3,6 @@
 
 import { restructureMessyPdf } from '@/ai/flows/restructure-messy-pdf';
 import type { Course } from '@/lib/types';
-import type { Buffer } from 'node:buffer';
 
 export async function generateCourseFromText(text: string): Promise<Course | { error: string }> {
   if (!text.trim() || text.length < 100) {
@@ -53,3 +52,4 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
     return { error: 'Failed to process the PDF file. Please ensure it is a valid PDF.' };
   }
 }
+
