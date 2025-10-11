@@ -8,6 +8,7 @@ function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
   return {
     course_title: analysis.document_summary.type,
     description: `A course based on the analyzed document. Readiness score: ${analysis.readiness_score}`,
+    total_estimated_time: analysis.document_summary.total_estimated_time,
     sessions: analysis.suggested_structure.map((session, sIndex) => ({
       ...session,
       id: `session-${sIndex}`,

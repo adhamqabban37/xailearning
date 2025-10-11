@@ -29,6 +29,7 @@ const DocumentSummarySchema = z.object({
   type: z.string().describe('The detected document type (e.g., roadmap, book, article).'),
   sections_detected: z.number().describe('Number of main sections or chapters found.'),
   lessons_detected: z.number().describe('Total number of lessons or sub-sections found.'),
+  total_estimated_time: z.string().describe("The total estimated time to complete the course."),
 });
 
 const SuggestedLessonSchema = z.object({
@@ -73,6 +74,7 @@ Confirm whether the text was extracted cleanly (no broken formatting, missing wo
 Identify if the PDF has scanned images (non-selectable text).
 Detect the document type (e.g., roadmap, book, article, notes, syllabus).
 Return a summary of the document structure (e.g., “5 sections, 20 paragraphs”).
+Also, calculate and return the total estimated time required to learn all the content.
 
 2. Content Structuring
 Identify modules / sessions / lessons / days automatically.

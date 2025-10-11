@@ -42,6 +42,16 @@ export function CoursePreview({ initialCourse, onClear }: CoursePreviewProps) {
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl font-headline">{course.course_title}</CardTitle>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1">
+                <Clock className="w-4 h-4" />
+                <span>{course.total_estimated_time || 'N/A'}</span>
+            </div>
+             <div className="flex items-center gap-1">
+                <FileText className="w-4 h-4" />
+                <span>{totalLessons} lessons</span>
+            </div>
+          </div>
           <CardDescription>
             {course.description}
           </CardDescription>

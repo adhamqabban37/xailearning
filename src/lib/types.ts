@@ -24,6 +24,7 @@ export type Course = {
   description: string;
   sessions: Session[];
   checklist?: string[];
+  total_estimated_time?: string;
 };
 
 // Extracted for convenience

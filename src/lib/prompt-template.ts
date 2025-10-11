@@ -21,6 +21,8 @@ Detect and extract all mentions of time (e.g., “15 minutes,” “2 hours”).
 
 If missing, suggest reasonable default estimates (e.g., 10 minutes per lesson, 5 minutes per quiz).
 
+Calculate and return the total estimated time required to learn all the content.
+
 Resource Extraction
 
 Extract all external resources such as YouTube videos, articles, PDFs, or references.
@@ -38,7 +40,7 @@ Always return resources in this format:
 
 Quiz Generation
 
-Create 3–5 quiz questions per session that check for understanding of the material.
+Create 3–5 quiz questions per session that check understanding of the material.
 
 Use multiple-choice, true/false, or short-answer formats.
 
