@@ -69,4 +69,3 @@ export async function generateCourseFromUrl(url: string): Promise<Course | { err
     return { error: 'Failed to process the URL. Please ensure it is a valid and accessible web page.' };
   }
 }
-
