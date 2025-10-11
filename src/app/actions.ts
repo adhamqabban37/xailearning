@@ -4,7 +4,7 @@
 import { restructureMessyPdf } from '@/ai/flows/restructure-messy-pdf';
 import { extractTextFromUrl } from '@/ai/flows/extract-text-from-url';
 import type { Course } from '@/lib/types';
-import pdf from 'pdf-parse';
+import type { Buffer } from 'node:buffer';
 
 export async function generateCourseFromText(text: string): Promise<Course | { error: string }> {
   if (!text.trim() || text.length < 100) {
@@ -45,6 +45,7 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
   }
   
   try {
+    const pdf = (await import('pdf-parse')).default;
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     const data = await pdf(fileBuffer);
     return generateCourseFromText(data.text);
