@@ -3,7 +3,8 @@
 
 import { restructureMessyPdf } from '@/ai/flows/restructure-messy-pdf';
 import type { Course } from '@/lib/types';
-import pdf from 'pdf-parse';
+// Dynamically import pdf-parse to avoid server-side bundling issues.
+// import pdf from 'pdf-parse';
 
 export async function generateCourseFromText(text: string): Promise<Course | { error: string }> {
   if (!text.trim() || text.length < 100) {
@@ -40,6 +41,7 @@ export async function generateCourseFromText(text: string): Promise<Course | { e
 
 export async function generateCourseFromPdf(fileBuffer: Buffer): Promise<Course | { error: string }> {
   try {
+    const pdf = (await import('pdf-parse')).default;
     const data = await pdf(fileBuffer);
     return generateCourseFromText(data.text);
   } catch (error) {
