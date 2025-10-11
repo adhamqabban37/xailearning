@@ -39,9 +39,10 @@ export async function generateCourseFromText(text: string): Promise<Course | { e
   }
 }
 
-export async function generateCourseFromPdf(fileBuffer: Buffer): Promise<Course | { error: string }> {
+export async function generateCourseFromPdf(base64: string): Promise<Course | { error: string }> {
   try {
     const pdf = (await import('pdf-parse')).default;
+    const fileBuffer = Buffer.from(base64, 'base64');
     const data = await pdf(fileBuffer);
     return generateCourseFromText(data.text);
   } catch (error) {
@@ -49,3 +50,4 @@ export async function generateCourseFromPdf(fileBuffer: Buffer): Promise<Course 
     return { error: 'Failed to process the PDF file. Please ensure it is a valid PDF.' };
   }
 }
+

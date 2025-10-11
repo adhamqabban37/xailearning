@@ -82,7 +82,9 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
       if (fileBuffer) {
         setIsLoading(true);
         setError(null);
-        const result = await generateCourseFromPdf(Buffer.from(fileBuffer));
+        // Convert ArrayBuffer to Base64 string
+        const base64 = Buffer.from(fileBuffer).toString('base64');
+        const result = await generateCourseFromPdf(base64);
         setIsLoading(false);
         if ("error" in result) {
           setError(result.error);
