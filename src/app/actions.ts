@@ -69,8 +69,8 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     const data = await pdf(fileBuffer);
     return generateCourseFromText(data.text);
-  } catch (error) {
-    console.error('Error processing PDF:', error);
+  } catch (error: any) {
+    console.error('Error processing PDF:', error.message);
     return { error: 'Failed to process the PDF file. Please ensure it is a valid PDF.' };
   }
 }
