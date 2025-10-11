@@ -41,6 +41,8 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
   const [fileName, setFileName] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
   const [promptValue, setPromptValue] = useState(promptTemplate.replace('[ENTER YOUR TOPIC HERE]', ''));
+  const [isPasting, setIsPasting] = useState(false);
+
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -54,6 +56,7 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
   });
 
   const topic = form.watch('promptTopic');
+  const textValue = form.watch('text');
 
   useEffect(() => {
     const newPrompt = promptTemplate.replace('[ENTER YOUR TOPIC HERE]', topic || '');
@@ -77,6 +80,7 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     setError(null);
     const result = await generateCourseFromText(textToSubmit);
     setIsLoading(false);
+    setIsPasting(false);
 
     if ("error" in result) {
       setError(result.error);
@@ -238,30 +242,41 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
                         accept=".pdf"
                         onChange={handleFileChange}
                         className="hidden"
+                        disabled={isLoading}
                     />
                 </div>
-                <FormField
+                 <FormField
                     control={form.control}
                     name="text"
                     render={({ field }) => (
                     <FormItem className='h-full'>
-                        <div 
-                            className="relative border-2 border-dashed border-muted/30 rounded-lg p-6 text-center cursor-text hover:border-primary hover:bg-muted/50 transition-colors h-full flex flex-col justify-center"
-                            onClick={() => document.getElementById('paste-text-area')?.focus()}
-                        >
-                            <FileText className="mx-auto h-8 w-8 text-primary" />
-                            <p className="mt-2 font-semibold text-foreground">Paste Text</p>
-                            <p className="text-xs text-muted-foreground">Paste any text to get started</p>
-                        </div>
-                        <FormControl>
-                            <Textarea
-                                id="paste-text-area"
-                                placeholder="Paste your messy course notes, lesson plans, or document text here..."
-                                className="min-h-[250px] text-base sr-only"
-                                {...field}
-                                onBlur={onTextSubmit}
-                            />
-                        </FormControl>
+                        {!isPasting ? (
+                            <div 
+                                className="relative border-2 border-dashed border-muted/30 rounded-lg p-6 text-center cursor-text hover:border-primary hover:bg-muted/50 transition-colors h-full flex flex-col justify-center"
+                                onClick={() => setIsPasting(true)}
+                            >
+                                <FileText className="mx-auto h-8 w-8 text-primary" />
+                                <p className="mt-2 font-semibold text-foreground">Paste Text</p>
+                                <p className="text-xs text-muted-foreground">Paste any text to get started</p>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-2 h-full">
+                                <FormControl>
+                                    <Textarea
+                                        id="paste-text-area"
+                                        placeholder="Paste your messy course notes, lesson plans, or document text here..."
+                                        className="min-h-[150px] text-base"
+                                        {...field}
+                                        autoFocus
+                                    />
+                                </FormControl>
+                                {textValue && textValue.length > 100 && (
+                                     <Button type="button" onClick={onTextSubmit} disabled={isLoading}>
+                                        {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Processing...</> : 'Generate from Text'}
+                                    </Button>
+                                )}
+                            </div>
+                        )}
                         <FormMessage />
                     </FormItem>
                     )}
@@ -303,5 +318,3 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     </Card>
   );
 }
-
-    
