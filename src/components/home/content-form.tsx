@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -16,8 +17,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, FileText, AlertCircle, UploadCloud, WandSparkles, Clipboard, ClipboardCheck, Edit } from "lucide-react";
-import { generateCourseFromText, generateCourseFromPdf } from "@/app/actions";
+import { Loader2, FileText, AlertCircle, UploadCloud, WandSparkles, Clipboard, ClipboardCheck, Edit, Link as LinkIcon } from "lucide-react";
+import { generateCourseFromText, generateCourseFromPdf, generateCourseFromUrl } from "@/app/actions";
 import type { Course } from "@/lib/types";
 import { promptTemplate } from "@/lib/prompt-template";
 import { Card } from "../ui/card";
@@ -26,6 +27,7 @@ import { Separator } from "../ui/separator";
 const formSchema = z.object({
   text: z.string().optional(),
   promptTopic: z.string().optional(),
+  url: z.string().url({ message: "Please enter a valid URL." }).optional(),
 });
 
 interface ContentFormProps {
@@ -47,6 +49,7 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     defaultValues: {
       text: "",
       promptTopic: "Beginner's guide to React",
+      url: ""
     },
   });
 
@@ -73,6 +76,24 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     setIsLoading(true);
     setError(null);
     const result = await generateCourseFromText(textToSubmit);
+    setIsLoading(false);
+
+    if ("error" in result) {
+      setError(result.error);
+    } else {
+      onCourseGenerated(result);
+    }
+  }
+
+  async function onUrlSubmit() {
+    const url = form.getValues("url");
+    if (!url) {
+      form.setError("url", { message: "Please enter a URL." });
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    const result = await generateCourseFromUrl(url);
     setIsLoading(false);
 
     if ("error" in result) {
@@ -203,7 +224,7 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
             <h3 className="text-muted-foreground font-medium">Or use other sources:</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div 
-                    className="relative border-2 border-dashed border-muted/30 rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
+                    className="relative border-2 border-dashed border-muted/30 rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors flex flex-col justify-center items-center"
                     onClick={() => fileInputRef.current?.click()}
                 >
                     <UploadCloud className="mx-auto h-8 w-8 text-primary" />
@@ -219,12 +240,11 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
                         className="hidden"
                     />
                 </div>
-
                 <FormField
                     control={form.control}
                     name="text"
                     render={({ field }) => (
-                    <FormItem>
+                    <FormItem className='h-full'>
                         <div 
                             className="relative border-2 border-dashed border-muted/30 rounded-lg p-6 text-center cursor-text hover:border-primary hover:bg-muted/50 transition-colors h-full flex flex-col justify-center"
                             onClick={() => document.getElementById('paste-text-area')?.focus()}
@@ -247,6 +267,28 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
                     )}
                 />
             </div>
+            <form onSubmit={form.handleSubmit(onUrlSubmit)} className="space-y-2 pt-4">
+              <div className="flex gap-2">
+                <FormField
+                    control={form.control}
+                    name="url"
+                    render={({ field }) => (
+                        <FormItem className="flex-1">
+                            <FormControl>
+                                <div className="relative flex items-center">
+                                    <LinkIcon className="absolute left-3 w-5 h-5 text-muted-foreground" />
+                                    <Input placeholder="Or paste a link to an article" {...field} className="pl-10 text-base py-6 bg-background" />
+                                </div>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <Button type="submit" className="py-6" disabled={isLoading}>
+                    {isLoading ? <Loader2 className="animate-spin" /> : 'Go'}
+                </Button>
+              </div>
+            </form>
         </div>
       </Form>
 
@@ -261,3 +303,5 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     </Card>
   );
 }
+
+    

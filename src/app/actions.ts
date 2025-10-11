@@ -2,6 +2,7 @@
 'use server';
 
 import { restructureMessyPdf } from '@/ai/flows/restructure-messy-pdf';
+import { extractTextFromUrl } from '@/ai/flows/extract-text-from-url';
 import type { Course } from '@/lib/types';
 
 export async function generateCourseFromText(text: string): Promise<Course | { error: string }> {
@@ -39,8 +40,6 @@ export async function generateCourseFromText(text: string): Promise<Course | { e
 
 export async function generateCourseFromPdf(base64: string): Promise<Course | { error: string }> {
   try {
-    // Use webpackIgnore to prevent pdf-parse from being bundled by default, then require it.
-    // This is a workaround for issues with CJS modules in the Next.js App Router.
     const pdf = (await (eval('import(/* webpackIgnore: true */ "pdf-parse")') as Promise<typeof import('pdf-parse')>)).default;
     const fileBuffer = Buffer.from(base64, 'base64');
     const data = await pdf(fileBuffer);
@@ -50,3 +49,18 @@ export async function generateCourseFromPdf(base64: string): Promise<Course | { 
     return { error: 'Failed to process the PDF file. Please ensure it is a valid PDF.' };
   }
 }
+
+export async function generateCourseFromUrl(url: string): Promise<Course | { error: string }> {
+  try {
+    const { textContent } = await extractTextFromUrl({ url });
+    if (!textContent) {
+      return { error: 'Could not extract any text from the provided URL. Please try a different page.' };
+    }
+    return generateCourseFromText(textContent);
+  } catch (error) {
+    console.error('Error processing URL:', error);
+    return { error: 'Failed to process the URL. Please ensure it is a valid and accessible web page.' };
+  }
+}
+
+    
