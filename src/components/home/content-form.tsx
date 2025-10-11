@@ -127,8 +127,8 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
         } else {
             onCourseGenerated(result);
         }
-    } catch (e) {
-        setError("Failed to read the file.");
+    } catch (e: any) {
+        setError(e.message || "Failed to read the file.");
         setIsLoading(false);
     }
   };
@@ -319,3 +319,5 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     </Card>
   );
 }
+
+    

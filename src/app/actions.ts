@@ -95,7 +95,9 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
 
     return courseWithIds;
   } catch (error: any) {
-    console.error('Error processing PDF with AI:', error.message);
-    return { error: 'Failed to process the PDF file. Please ensure it is a valid PDF.' };
+    console.error('Error processing PDF with AI:', error);
+    return { error: error.message || 'Failed to process the PDF file. Please ensure it is a valid PDF.' };
   }
 }
+
+    
