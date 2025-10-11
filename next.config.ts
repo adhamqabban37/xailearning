@@ -30,14 +30,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-        // pdf-parse is a CJS module that causes issues with webpack in Next.js.
-        // This is a workaround to make it work.
-        config.externals.push('pdf-parse');
-    }
-    return config;
-  }
 };
 
 export default nextConfig;
