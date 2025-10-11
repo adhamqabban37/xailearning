@@ -16,7 +16,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, FileText, AlertCircle, UploadCloud } from "lucide-react";
+import { Loader2, FileText, AlertCircle, UploadCloud, WandSparkles } from "lucide-react";
 import { generateCourseFromText, generateCourseFromPdf } from "@/app/actions";
 import type { Course } from "@/lib/types";
 
@@ -103,7 +103,7 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
+    <div className="w-full max-w-2xl mx-auto bg-card p-6 rounded-xl border shadow-sm">
       <Tabs defaultValue="text" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="text"><FileText className="mr-2 h-4 w-4" />Paste Text</TabsTrigger>
@@ -134,10 +134,13 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    Crafting From Text...
+                    Crafting Your Course...
                   </>
                 ) : (
-                  "Create Course from Text"
+                  <>
+                    <WandSparkles className="mr-2 h-5 w-5" />
+                    Create with AI
+                  </>
                 )}
               </Button>
             </form>
@@ -146,7 +149,7 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
         <TabsContent value="pdf">
             <form onSubmit={onPdfSubmit} className="space-y-6 mt-4">
               <div 
-                className="relative border-2 border-dashed border-muted-foreground/50 rounded-lg p-8 text-center cursor-pointer hover:bg-muted"
+                className="relative border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => fileInputRef.current?.click()}
               >
                   <UploadCloud className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -170,7 +173,10 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
                     Crafting from PDF...
                   </>
                 ) : (
-                  "Create Course from PDF"
+                   <>
+                    <WandSparkles className="mr-2 h-5 w-5" />
+                    Create with AI
+                  </>
                 )}
               </Button>
             </form>
@@ -179,7 +185,7 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
       {error && (
         <Alert variant="destructive" className="mt-4">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>Oops! Something went wrong.</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}

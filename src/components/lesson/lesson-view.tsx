@@ -1,144 +1,54 @@
 "use client";
 
-import { useState, useMemo } from 'react';
-import type { Step, StudySession } from '@/lib/types';
-import { useCourseStorage } from '@/hooks/use-course-storage';
-import { useRouter } from 'next/navigation';
-
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, CheckCircle } from 'lucide-react';
-import { LessonProgressBar } from './progress-bar';
-import { ResourcesPanel } from './resources-panel';
-import { QuizView } from './quiz-view';
+import type { StudySession } from '@/lib/types';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
+import { ScrollArea } from '../ui/scroll-area';
+import { ConceptCard } from './concept-card';
+import { KeyTermCard } from './key-term-card';
+import { QuizCard } from './quiz-card';
+import { AskTheDocumentCard } from './ask-the-document-card';
 
 interface LessonViewProps {
   session: StudySession;
 }
 
 export function LessonView({ session }: LessonViewProps) {
-  const { storedCourse, updateStepProgress, startNewSession } = useCourseStorage();
-  const router = useRouter();
 
-  const [completedSteps, setCompletedSteps] = useState<Record<string, boolean>>(() => {
-    const initial: Record<string, boolean> = {};
-    session.steps.forEach(step => {
-      if (storedCourse?.progress[step.id] === 'completed') {
-        initial[step.id] = true;
-      }
-    });
-    return initial;
-  });
-
-  const allStepsInSessionCompleted = session.steps.every(step => completedSteps[step.id]);
-  
-  const quizQuestions = useMemo(() => {
-    return session.steps
-      .flatMap(step => step.quizQuestions || [])
-      .filter(q => q.question && q.answer);
-  }, [session.steps]);
-
-  const [showQuiz, setShowQuiz] = useState(false);
-  const [quizCompleted, setQuizCompleted] = useState(false);
-
-  const handleStepCompletion = (step: Step, isCompleted: boolean) => {
-    setCompletedSteps(prev => ({ ...prev, [step.id]: isCompleted }));
-    if (isCompleted) {
-      updateStepProgress(step.id, 'completed');
-    }
-    // Note: un-completing is not persisted in this logic, only visual for the session
-  };
-
-  const handleContinue = () => {
-    if (allStepsInSessionCompleted && quizQuestions.length > 0 && !showQuiz) {
-      setShowQuiz(true);
-    } else {
-      const nextSession = startNewSession(30); // Default to 30 mins for next session
-      if (nextSession) {
-        window.location.reload(); // Easiest way to re-render with new session
-      } else {
-        router.push('/'); // Or a completion page
-      }
-    }
-  };
-
-  if (quizCompleted) {
-     return (
-        <Card className="w-full text-center p-8">
-            <CardHeader>
-                <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
-                <CardTitle className="text-3xl mt-4">Session Complete!</CardTitle>
-                <CardDescription>Great job! You've completed this study session.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button onClick={handleContinue} size="lg">
-                    {storedCourse && storedCourse.course.sessions.length > session.sessionIndex + 1 ? "Start Next Session" : "Back to Home"}
-                </Button>
-            </CardContent>
-        </Card>
-     );
-  }
-
-  if (showQuiz) {
-    return <QuizView questions={quizQuestions} onQuizComplete={() => setQuizCompleted(true)} />;
-  }
+  // For demonstration, we'll create some mock cards.
+  // In a real implementation, this would be driven by the AI-processed course data.
+  const allSteps = session.steps;
+  const quizQuestions = session.steps.flatMap(s => s.quizQuestions || []).filter(q => q.question && q.answer);
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-3xl font-headline">{session.title}</CardTitle>
-        <CardDescription>Session {session.sessionIndex + 1} of {storedCourse?.course.sessions.length}</CardDescription>
-        <LessonProgressBar 
-            completedSteps={session.completedStepsInCourse + Object.values(completedSteps).filter(Boolean).length} 
-            totalSteps={session.totalStepsInCourse}
-        />
-      </CardHeader>
-      <CardContent>
-        <Accordion type="multiple" defaultValue={session.steps.length > 0 ? [session.steps[0].id] : []}>
-          {session.steps.map(step => (
-            <AccordionItem value={step.id} key={step.id}>
-              <div className="flex items-center gap-4 w-full mr-4">
-                 <Checkbox
-                    id={`cb-${step.id}`}
-                    checked={!!completedSteps[step.id]}
-                    onCheckedChange={(checked) => handleStepCompletion(step, !!checked)}
-                    aria-label={`Mark step ${step.title} as complete`}
-                    className="ml-4"
-                  />
-                <AccordionTrigger className="hover:no-underline flex-1">
-                    <div className="flex-1 text-left">
-                      <p className={`font-medium ${completedSteps[step.id] ? 'line-through text-muted-foreground' : ''}`}>
-                        {step.title}
-                      </p>
-                      <div className="flex items-center text-xs text-muted-foreground mt-1">
-                        <Clock className="w-3 h-3 mr-1.5" />
-                        {step.timeEstimateMinutes ? `${step.timeEstimateMinutes} min` : '5 min (est.)'}
-                      </div>
-                    </div>
-                </AccordionTrigger>
-              </div>
-              <AccordionContent className="pl-12 space-y-4">
-                <div className="prose prose-sm dark:prose-invert max-w-none">
-                  {step.content}
-                </div>
-                {step.resources && <ResourcesPanel resources={step.resources} />}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      </CardContent>
-      {allStepsInSessionCompleted && (
-        <CardContent className="text-center border-t pt-6">
-            <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-2" />
-            <h3 className="text-lg font-semibold">All steps completed!</h3>
-            <p className="text-muted-foreground mb-4">Ready to test your knowledge?</p>
-            <Button onClick={handleContinue} size="lg">
-                {quizQuestions.length > 0 ? "Start Quiz" : "Finish Session"}
-            </Button>
-        </CardContent>
-      )}
-    </Card>
+    <ResizablePanelGroup
+      direction="horizontal"
+      className="w-full h-[calc(100vh-3.5rem)] rounded-none border-none"
+    >
+      <ResizablePanel defaultSize={40}>
+        <div className="flex h-full items-center justify-center p-1">
+          <iframe src="/placeholder-pdf.pdf" className="w-full h-full border rounded-lg" title="Source Document"/>
+        </div>
+      </ResizablePanel>
+      <ResizableHandle withHandle />
+      <ResizablePanel defaultSize={60}>
+        <ScrollArea className="h-full px-4">
+            <div className="container mx-auto py-8 space-y-6">
+                <h1 className="text-3xl font-bold tracking-tight">{session.title}</h1>
+                
+                <AskTheDocumentCard />
+
+                {allSteps.map(step => (
+                    <ConceptCard key={step.id} step={step} />
+                ))}
+
+                <KeyTermCard term="Gamification" definition="The application of game-design elements and game principles in non-game contexts." />
+                <KeyTermCard term="Hydration Error" definition="A mismatch between the server-rendered HTML and the initial client-side render in React applications." />
+
+                {quizQuestions.length > 0 && <QuizCard questions={quizQuestions} />}
+
+            </div>
+        </ScrollArea>
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 }
