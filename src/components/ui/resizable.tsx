@@ -7,8 +7,8 @@ import {
   type ResizablePanelGroupProps,
   ResizablePanel as ResizablePanelPrimitive,
   type ResizablePanelProps,
-  ResizableHandle as ResizableHandlePrimitive,
-  type ResizableHandleProps,
+  PanelResizeHandle as ResizableHandlePrimitive,
+  type PanelResizeHandleProps as ResizableHandleProps,
 } from "react-resizable-panels"
 
 import { cn } from "@/lib/utils"
