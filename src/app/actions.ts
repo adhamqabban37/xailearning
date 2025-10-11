@@ -1,24 +1,45 @@
 
 'use server';
 
-import { restructureMessyPdf } from '@/ai/flows/restructure-messy-pdf';
-import type { Course } from '@/lib/types';
+import { analyzeDocument } from '@/ai/flows/restructure-messy-pdf';
+import type { Course, CourseAnalysis } from '@/lib/types';
+import pdf from 'pdf-parse';
+
+function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
+  return {
+    course_title: analysis.document_summary.type,
+    description: `A course based on the analyzed document. Readiness score: ${analysis.readiness_score}`,
+    sessions: analysis.suggested_structure.map((session, sIndex) => ({
+      ...session,
+      id: `session-${sIndex}`,
+      lessons: session.lessons.map((lesson, lIndex) => ({
+        ...lesson,
+        id: `session-${sIndex}-lesson-${lIndex}`,
+        lesson_title: lesson.lesson_title,
+        content_summary: lesson.content_snippet,
+      })),
+    })),
+    checklist: analysis.improvement_recommendations,
+  };
+}
 
 export async function generateCourseFromText(text: string): Promise<Course | { error: string }> {
   if (!text.trim() || text.length < 100) {
     return { error: 'Please enter a substantial amount of text (at least 100 characters) to create a course.' };
   }
   try {
-    const structuredContent = await restructureMessyPdf({ pdfText: text });
+    const analysis = await analyzeDocument({ textContent: text });
 
-    if (!structuredContent || !structuredContent.sessions || structuredContent.sessions.length === 0) {
-        return { error: 'The AI could not structure a course from the provided text. Please try again with different content.' };
+    if (!analysis || !analysis.suggested_structure || analysis.suggested_structure.length === 0) {
+        return { error: 'The AI could not analyze the provided text. Please try again with different content.' };
     }
 
+    const course = transformAnalysisToCourse(analysis);
+    
     // Add unique IDs to sessions and lessons for client-side tracking
     const courseWithIds: Course = {
-      ...structuredContent,
-      sessions: structuredContent.sessions.map((session, sIndex) => ({
+      ...course,
+      sessions: course.sessions.map((session, sIndex) => ({
         ...session,
         id: `session-${sIndex}`,
         lessons: session.lessons.map((lesson, lIndex) => ({
@@ -43,7 +64,6 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
   }
   
   try {
-    const pdf = (await import('pdf-parse')).default;
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     const data = await pdf(fileBuffer);
     return generateCourseFromText(data.text);
@@ -52,4 +72,3 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
     return { error: 'Failed to process the PDF file. Please ensure it is a valid PDF.' };
   }
 }
-

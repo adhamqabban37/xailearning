@@ -1,16 +1,29 @@
-import type { RestructureMessyPdfOutput } from '@/ai/flows/restructure-messy-pdf';
+import type { AnalyzeDocumentOutput } from '@/ai/flows/restructure-messy-pdf';
 
-// Raw types from the AI schema
-type RawLesson = RestructureMessyPdfOutput['sessions'][0]['lessons'][0];
-type RawSession = Omit<RestructureMessyPdfOutput['sessions'][0], 'lessons'>;
+export type CourseAnalysis = AnalyzeDocumentOutput;
 
-// Augmented types with client-side IDs
-export type Lesson = RawLesson & { id: string };
-export type Session = RawSession & { id: string; lessons: Lesson[]; };
+// These types are now derived from the analysis output for consistency
+// but represent the final, interactable course structure.
+type SuggestedLesson = AnalyzeDocumentOutput['suggested_structure'][0]['lessons'][0];
+type SuggestedSession = Omit<AnalyzeDocumentOutput['suggested_structure'][0], 'lessons'>;
 
-// Main course type
-export type Course = Omit<RestructureMessyPdfOutput, 'sessions'> & {
+
+// Augmented types with client-side IDs and more details for the interactive phase
+export type Lesson = SuggestedLesson & { 
+  id: string;
+  content_summary: string;
+  resources?: { title: string; type: string; url: string }[];
+  quiz?: { question: string; answer: string; options?: string[] }[];
+  timeEstimateMinutes?: number;
+};
+export type Session = SuggestedSession & { id: string; lessons: Lesson[]; estimated_time?: string; };
+
+// This is the final course object used by the learning interface
+export type Course = {
+  course_title: string;
+  description: string;
   sessions: Session[];
+  checklist?: string[];
 };
 
 // Extracted for convenience
