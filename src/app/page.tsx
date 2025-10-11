@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ContentForm } from '@/components/home/content-form';
 import { CoursePreview } from '@/components/home/course-preview';
-import { Loader2, BookOpenCheck } from 'lucide-react';
-import { Logo } from '@/components/common/logo';
+import { Loader2, BookOpenCheck, WandSparkles, UploadCloud, Rocket } from 'lucide-react';
 
 export default function Home() {
   const [course, setCourse] = useState<Course | null>(null);
@@ -78,11 +77,38 @@ export default function Home() {
          <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background to-transparent"></div>
          <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background to-transparent"></div>
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 bg-gradient-to-b from-foreground to-foreground/70 text-transparent bg-clip-text">
-          Craft the Future of Learning
+          Turn Any Document into an Adventure
         </h1>
         <p className="max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground">
-          Transform any document into a personalized, interactive course with the power of AI.
+          Our mission is to transform static content into personalized, interactive courses with the power of AI.
         </p>
+      </section>
+
+      <section className="my-16">
+        <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
+        <div className="grid md:grid-cols-3 gap-8 text-center max-w-5xl mx-auto">
+          <div className="flex flex-col items-center">
+            <div className="flex items-center justify-center w-16 h-16 bg-primary/10 text-primary rounded-full mb-4">
+              <WandSparkles className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">1. Craft Your Content</h3>
+            <p className="text-muted-foreground">Use our powerful prompt to generate rich, structured course material on any topic with your favorite AI tool.</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="flex items-center justify-center w-16 h-16 bg-primary/10 text-primary rounded-full mb-4">
+              <UploadCloud className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">2. Upload Your Document</h3>
+            <p className="text-muted-foreground">Bring your generated PDF or text back here. Our AI analyzes the content to build your interactive course.</p>
+          </div>
+          <div className="flex flex-col items-center">
+            <div className="flex items-center justify-center w-16 h-16 bg-primary/10 text-primary rounded-full mb-4">
+              <Rocket className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">3. Start Your Adventure</h3>
+            <p className="text-muted-foreground">Dive into a personalized learning experience with videos, quizzes, and progress tracking.</p>
+          </div>
+        </div>
       </section>
 
       <section>
