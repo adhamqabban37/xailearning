@@ -1,25 +1,21 @@
 
 "use client";
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
 import type { Course } from '@/lib/types';
 import { useCourseStorage } from '@/hooks/use-course-storage';
-import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ContentForm } from '@/components/home/content-form';
 import { CoursePreview } from '@/components/home/course-preview';
-import { Loader2, BookOpenCheck } from 'lucide-react';
+import { Loader2, BookOpenCheck, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 
 export default function Home() {
   const [course, setCourse] = useState<Course | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { storedCourse, clearCourse, isLoading: storageIsLoading } = useCourseStorage();
   const router = useRouter();
-
-  useEffect(() => {
-    if (storedCourse) {
-      setCourse(storedCourse.course);
-    }
-  }, [storedCourse]);
 
   const handleResume = () => {
     router.push('/lesson');
@@ -85,9 +81,28 @@ export default function Home() {
         </p>
       </section>
 
-      <section>
+      <section className="mb-16">
         <ContentForm onCourseGenerated={setCourse} isLoading={isLoading} setIsLoading={setIsLoading} />
       </section>
+
+      <section>
+        <h2 className="text-3xl font-bold text-center mb-8">How It Works</h2>
+        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <Card className="bg-card/50 border-primary/20 text-center p-6">
+            <h3 className="text-xl font-bold text-primary mb-2">1. Craft Your Content</h3>
+            <p className="text-muted-foreground">Use our optimized AI prompt to generate high-quality course material on any topic with your favorite AI tool.</p>
+          </Card>
+          <Card className="bg-card/50 border-primary/20 text-center p-6">
+            <h3 className="text-xl font-bold text-primary mb-2">2. Upload Your Document</h3>
+            <p className="text-muted-foreground">Bring your generated PDF, text, or a link to an existing article into Course Crafter.</p>
+          </Card>
+          <Card className="bg-card/50 border-primary/20 text-center p-6">
+            <h3 className="text-xl font-bold text-primary mb-2">3. Start Learning</h3>
+            <p className="text-muted-foreground">We transform your document into an interactive, engaging course with quizzes, resources, and progress tracking.</p>
+          </Card>
+        </div>
+      </section>
+
     </div>
   );
 }
