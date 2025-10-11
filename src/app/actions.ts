@@ -3,7 +3,6 @@
 
 import { analyzeDocument } from '@/ai/flows/restructure-messy-pdf';
 import type { Course, CourseAnalysis } from '@/lib/types';
-import pdf from 'pdf-parse';
 
 function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
   return {
@@ -64,6 +63,7 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
   }
   
   try {
+    const pdf = (await import('pdf-parse')).default;
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     const data = await pdf(fileBuffer);
     return generateCourseFromText(data.text);
