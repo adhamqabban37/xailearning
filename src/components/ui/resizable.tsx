@@ -3,10 +3,10 @@
 import * as React from "react"
 import { GripVertical } from "lucide-react"
 import {
-  ResizablePanelGroup as ResizablePanelGroupPrimitive,
-  type ResizablePanelGroupProps,
-  ResizablePanel as ResizablePanelPrimitive,
-  type ResizablePanelProps,
+  PanelGroup as ResizablePanelGroupPrimitive,
+  type PanelGroupProps as ResizablePanelGroupProps,
+  Panel as ResizablePanelPrimitive,
+  type PanelProps as ResizablePanelProps,
   PanelResizeHandle as ResizableHandlePrimitive,
   type PanelResizeHandleProps as ResizableHandleProps,
 } from "react-resizable-panels"
