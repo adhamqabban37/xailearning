@@ -16,12 +16,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, FileText, AlertCircle, UploadCloud, WandSparkles, Clipboard, ClipboardCheck, Edit, FileType, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, FileText, AlertCircle, UploadCloud, WandSparkles, Clipboard, ClipboardCheck, Edit } from "lucide-react";
 import { generateCourseFromText, generateCourseFromPdf } from "@/app/actions";
 import type { Course } from "@/lib/types";
 import { promptTemplate } from "@/lib/prompt-template";
-import { cn } from "@/lib/utils";
-import { Card, CardContent } from "../ui/card";
+import { Card } from "../ui/card";
 import { Separator } from "../ui/separator";
 
 const formSchema = z.object({
@@ -40,7 +39,6 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
   const [fileName, setFileName] = useState<string | null>(null);
   const [isCopied, setIsCopied] = useState(false);
   const [promptValue, setPromptValue] = useState(promptTemplate.replace('[ENTER YOUR TOPIC HERE]', ''));
-  const [showAlternatives, setShowAlternatives] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -198,59 +196,59 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
             )}
             </Button>
         </form>
-      </Form>
       
-      <Separator className="my-8" />
+        <Separator className="my-8" />
 
-      <div className="space-y-4 text-center">
-         <h3 className="text-muted-foreground font-medium">Or use other sources:</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             <div 
-                className="relative border-2 border-dashed border-muted/30 rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                  <UploadCloud className="mx-auto h-8 w-8 text-primary" />
-                  <p className="mt-2 font-semibold text-foreground">
-                    {fileName || 'Upload a PDF'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">The AI will read the file and build a course</p>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-              </div>
+        <div className="space-y-4 text-center">
+            <h3 className="text-muted-foreground font-medium">Or use other sources:</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div 
+                    className="relative border-2 border-dashed border-muted/30 rounded-lg p-6 text-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                >
+                    <UploadCloud className="mx-auto h-8 w-8 text-primary" />
+                    <p className="mt-2 font-semibold text-foreground">
+                        {fileName || 'Upload a PDF'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">The AI will read the file and build a course</p>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".pdf"
+                        onChange={handleFileChange}
+                        className="hidden"
+                    />
+                </div>
 
-            <FormField
-                control={form.control}
-                name="text"
-                render={({ field }) => (
-                <FormItem>
-                    <div 
-                        className="relative border-2 border-dashed border-muted/30 rounded-lg p-6 text-center cursor-text hover:border-primary hover:bg-muted/50 transition-colors h-full flex flex-col justify-center"
-                        onClick={() => document.getElementById('paste-text-area')?.focus()}
-                    >
-                        <FileText className="mx-auto h-8 w-8 text-primary" />
-                        <p className="mt-2 font-semibold text-foreground">Paste Text</p>
-                        <p className="text-xs text-muted-foreground">Paste any text to get started</p>
-                    </div>
-                    <FormControl>
-                        <Textarea
-                            id="paste-text-area"
-                            placeholder="Paste your messy course notes, lesson plans, or document text here..."
-                            className="min-h-[250px] text-base sr-only"
-                            {...field}
-                            onBlur={onTextSubmit}
-                        />
-                    </FormControl>
-                    <FormMessage />
-                </FormItem>
-                )}
-            />
+                <FormField
+                    control={form.control}
+                    name="text"
+                    render={({ field }) => (
+                    <FormItem>
+                        <div 
+                            className="relative border-2 border-dashed border-muted/30 rounded-lg p-6 text-center cursor-text hover:border-primary hover:bg-muted/50 transition-colors h-full flex flex-col justify-center"
+                            onClick={() => document.getElementById('paste-text-area')?.focus()}
+                        >
+                            <FileText className="mx-auto h-8 w-8 text-primary" />
+                            <p className="mt-2 font-semibold text-foreground">Paste Text</p>
+                            <p className="text-xs text-muted-foreground">Paste any text to get started</p>
+                        </div>
+                        <FormControl>
+                            <Textarea
+                                id="paste-text-area"
+                                placeholder="Paste your messy course notes, lesson plans, or document text here..."
+                                className="min-h-[250px] text-base sr-only"
+                                {...field}
+                                onBlur={onTextSubmit}
+                            />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+            </div>
         </div>
-      </div>
+      </Form>
 
 
       {error && (
