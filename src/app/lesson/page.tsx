@@ -41,5 +41,5 @@ export default function LessonPage() {
     );
   }
 
-  return <LessonView session={studySession} />;
+  return <LessonView initialSession={studySession} />;
 }

@@ -25,6 +25,7 @@ export type StudySession = {
   title: string;
   steps: Step[];
   sessionIndex: number;
+  durationMinutes: number;
   totalStepsInCourse: number;
   completedStepsInCourse: number;
 };

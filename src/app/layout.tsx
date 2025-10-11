@@ -2,9 +2,13 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/common/header';
-import { Inter } from 'next/font/google';
+import { PT_Sans } from 'next/font/google';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
+const ptSans = PT_Sans({ 
+  subsets: ['latin'], 
+  weight: ['400', '700'],
+  variable: '--font-sans' 
+});
 
 export const metadata: Metadata = {
   title: 'AI Course Crafter',
@@ -21,7 +25,7 @@ export default function RootLayout({
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet" />
       </head>
-      <body className={`font-sans antialiased min-h-screen flex flex-col ${inter.variable}`}>
+      <body className={`font-sans antialiased min-h-screen flex flex-col ${ptSans.variable}`}>
         <Header />
         <main className="flex-1">
           {children}
