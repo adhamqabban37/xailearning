@@ -39,9 +39,8 @@ export async function generateCourseFromText(text: string): Promise<Course | { e
   }
 }
 
-export async function generateCourseFromPdf(base64: string): Promise<Course | { error: string }> {
+export async function generateCourseFromPdf(fileBuffer: Buffer): Promise<Course | { error: string }> {
   try {
-    const fileBuffer = Buffer.from(base64, 'base64');
     const data = await pdf(fileBuffer);
     return generateCourseFromText(data.text);
   } catch (error) {
@@ -49,6 +48,7 @@ export async function generateCourseFromPdf(base64: string): Promise<Course | { 
     return { error: 'Failed to process the PDF file. Please ensure it is a valid PDF.' };
   }
 }
+
 
 export async function generateCourseFromUrl(url: string): Promise<Course | { error: string }> {
   try {
@@ -62,5 +62,3 @@ export async function generateCourseFromUrl(url: string): Promise<Course | { err
     return { error: 'Failed to process the URL. Please ensure it is a valid and accessible web page.' };
   }
 }
-
-    

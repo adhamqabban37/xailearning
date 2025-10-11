@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef, useEffect, useTransition } from "react";
+import { useState, useRef, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -125,8 +125,8 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     reader.onload = async (e) => {
       const fileBuffer = e.target?.result as ArrayBuffer;
       if (fileBuffer) {
-        const base64 = Buffer.from(fileBuffer).toString('base64');
-        const result = await generateCourseFromPdf(base64);
+        // We need to convert ArrayBuffer to Buffer for the server action
+        const result = await generateCourseFromPdf(Buffer.from(fileBuffer));
         setIsLoading(false);
         if ("error" in result) {
           setError(result.error);
