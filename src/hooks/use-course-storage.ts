@@ -57,9 +57,14 @@ export function useCourseStorage() {
   }, []);
 
   const startNewSession = useCallback((duration: number) => {
-    if (!storedCourse) return null;
+    // This function needs the most up-to-date 'storedCourse'
+    // so we retrieve it from localStorage directly inside the function
+    const courseItem = window.localStorage.getItem(COURSE_STORAGE_KEY);
+    const currentStoredCourse = courseItem ? JSON.parse(courseItem) : null;
 
-    const newSession = sliceSession(storedCourse, duration);
+    if (!currentStoredCourse) return null;
+
+    const newSession = sliceSession(currentStoredCourse, duration);
     if (newSession) {
         try {
             window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(newSession));
@@ -77,7 +82,7 @@ export function useCourseStorage() {
         }
     }
     return newSession;
-  }, [storedCourse]);
+  }, []);
 
   const updateStepProgress = useCallback((stepId: string, status: 'completed') => {
     setStoredCourse(prev => {

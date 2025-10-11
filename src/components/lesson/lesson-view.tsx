@@ -1,18 +1,18 @@
 "use client";
 
 import { useState } from 'react';
-import type { Step, StudySession } from '@/lib/types';
+import type { StudySession } from '@/lib/types';
 import { useCourseStorage } from '@/hooks/use-course-storage';
 import { useRouter } from 'next/navigation';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
 import { ScrollArea } from '../ui/scroll-area';
 import { ConceptCard } from './concept-card';
-import { KeyTermCard } from './key-term-card';
 import { QuizCard } from './quiz-card';
 import { AskTheDocumentCard } from './ask-the-document-card';
 import { LessonProgressBar } from './progress-bar';
 import { Checkbox } from '../ui/checkbox';
 import { CompletionCard } from './completion-card';
+import { ResourcesPanel } from './resources-panel';
 
 interface LessonViewProps {
   initialSession: StudySession;
@@ -21,19 +21,27 @@ interface LessonViewProps {
 export function LessonView({ initialSession }: LessonViewProps) {
   const router = useRouter();
   const [session, setSession] = useState(initialSession);
-  const { updateStepProgress, startNewSession, clearCourse } = useCourseStorage();
-  const [completedSteps, setCompletedSteps] = useState<Record<string, boolean>>({});
+  const { updateStepProgress, startNewSession, clearCourse, storedCourse } = useCourseStorage();
+
+  const [completedSteps, setCompletedSteps] = useState<Record<string, boolean>>(() => {
+    if (!storedCourse?.progress) return {};
+    return session.steps.reduce((acc, step) => {
+      if (storedCourse.progress[step.id]) {
+        acc[step.id] = true;
+      }
+      return acc;
+    }, {} as Record<string, boolean>);
+  });
 
   const isStepCompleted = (stepId: string) => !!completedSteps[stepId];
 
   const handleStepComplete = (stepId: string, isChecked: boolean) => {
+    setCompletedSteps(prev => ({ ...prev, [stepId]: isChecked }));
     if (isChecked) {
-      setCompletedSteps(prev => ({ ...prev, [stepId]: true }));
       updateStepProgress(stepId, 'completed');
     } else {
       // In a real app, you might want to handle un-completing a step
-      const { [stepId]: _, ...rest } = completedSteps;
-      setCompletedSteps(rest);
+      // For now, we only track completion
     }
   };
 
@@ -47,12 +55,13 @@ export function LessonView({ initialSession }: LessonViewProps) {
       setSession(newSession);
       setCompletedSteps({});
     } else {
-      router.push('/'); // Or a course completion page
+      // Course is finished, or no more sessions
+      handleFinish();
     }
   };
 
   const handleFinish = () => {
-    clearCourse();
+    // We don't clear the course so the user can review it from the homepage
     router.push('/');
   };
 
@@ -83,13 +92,15 @@ export function LessonView({ initialSession }: LessonViewProps) {
                     <div key={step.id} className="flex items-start gap-4">
                          <Checkbox
                             id={`cb-${step.id}`}
-                            className='mt-2'
+                            className='mt-8'
                             onCheckedChange={(checked) => handleStepComplete(step.id, !!checked)}
                             checked={isStepCompleted(step.id)}
                             aria-label={`Mark step ${step.title} as complete`}
                         />
-                        <div className={`flex-1 transition-opacity ${isStepCompleted(step.id) ? 'opacity-50' : 'opacity-100'}`}>
+                        <div className={`flex-1 transition-opacity space-y-4 ${isStepCompleted(step.id) ? 'opacity-50' : 'opacity-100'}`}>
                            <ConceptCard step={step} />
+                           {step.resources && step.resources.length > 0 && <ResourcesPanel resources={step.resources} />}
+                           {step.quizQuestions && step.quizQuestions.length > 0 && <QuizCard questions={step.quizQuestions} />}
                         </div>
                     </div>
                 ))}
