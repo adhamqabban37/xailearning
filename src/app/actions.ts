@@ -2,9 +2,9 @@
 'use server';
 
 import { analyzeDocument } from '@/ai/flows/restructure-messy-pdf';
-import { analyzePdf } from '@/ai/flows/analyze-pdf-flow';
 import { auditCourse } from '@/ai/flows/audit-course';
 import type { Course, CourseAnalysis } from '@/lib/types';
+import pdf from 'pdf-parse';
 
 function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
   const allLessons = (analysis.modules || []).flatMap(m => m.lessons || []);
@@ -88,24 +88,18 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
 
   try {
     const fileBuffer = Buffer.from(await file.arrayBuffer());
-    const pdfDataUri = `data:application/pdf;base64,${fileBuffer.toString('base64')}`;
+    const data = await pdf(fileBuffer);
+    const textContent = data.text;
 
-    const analysis = await analyzePdf({ pdfDataUri, duration });
-    
-    if (!analysis || !analysis.modules || analysis.modules.length === 0) {
-        return { error: 'The AI could not analyze the provided PDF. It might be empty, corrupted, or an image-only PDF.' };
+    if (!textContent.trim() || textContent.length < 100) {
+      return { error: 'The extracted text from the PDF is too short to create a course (less than 100 characters). The PDF might be empty or image-based.' };
     }
+    
+    // Now that we have the text, we can use the existing text-based generation logic.
+    return await generateCourseFromText(textContent, duration);
 
-    const course = transformAnalysisToCourse(analysis);
-
-    // Asynchronously audit the generated course
-    auditCourse({ courseContent: JSON.stringify(analysis, null, 2) })
-      .then(report => console.log('Course Audit Report:', JSON.stringify(report, null, 2)))
-      .catch(err => console.error('Auditing failed:', err));
-
-    return course;
   } catch (error: any) {
-    console.error('Error processing PDF with AI:', error);
-    return { error: error.message || 'Failed to process the PDF file. Please ensure it is a valid PDF.' };
+    console.error('Error processing PDF:', error);
+    return { error: error.message || 'Failed to process the PDF file. Please ensure it is a valid, text-based PDF.' };
   }
 }
