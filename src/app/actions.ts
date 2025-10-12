@@ -42,8 +42,8 @@ function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
         };
       }),
     })),
-    checklist: [],
-    readiness_score: 100,
+    checklist: [], // This can be populated by the audit if needed
+    readiness_score: 100, // Placeholder, can be calculated from audit
     analysis_report: analysis,
   };
 }
@@ -102,8 +102,8 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
     const data = await pdf(buffer);
     const textContent = data.text;
     
-    if (!textContent.trim()) {
-      return { error: 'The PDF appears to be empty or does not contain selectable text.' };
+    if (!textContent.trim() || textContent.length < 100) {
+      return { error: 'The PDF appears to be empty or does not contain enough selectable text to create a course.' };
     }
     
     return await generateCourseFromText(textContent, duration);
