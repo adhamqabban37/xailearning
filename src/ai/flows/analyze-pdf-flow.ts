@@ -56,7 +56,6 @@ External Resources:
 Include valid, working URLs for YouTube videos, articles, and documentation.
 Provide clickable links with clear titles. For videos, suggest relevant timestamps if possible.
 Ensure resources are high-quality, recent (2021+), and authoritative.
-Check all URLs; if a link is broken, provide an alternative.
 
 Course Flow & Engagement:
 

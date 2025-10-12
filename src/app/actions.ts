@@ -3,6 +3,7 @@
 
 import { analyzeDocument } from '@/ai/flows/restructure-messy-pdf';
 import { analyzePdf } from '@/ai/flows/analyze-pdf-flow';
+import { auditCourse } from '@/ai/flows/audit-course';
 import type { Course, CourseAnalysis } from '@/lib/types';
 
 function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
@@ -18,9 +19,9 @@ function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
       session_title: module.module_title,
       lessons: (module.lessons || []).map((lesson, lIndex) => {
         const resources = [
-          ...(lesson.resources?.youtube || []).map(r => ({ ...r, type: 'video' })),
-          ...(lesson.resources?.articles || []).map(r => ({ ...r, type: 'article' })),
-          ...(lesson.resources?.pdfs_docs || []).map(r => ({ ...r, type: 'docs' })),
+          ...(lesson.resources?.youtube || []).map(r => ({ ...r, type: 'video' as const })),
+          ...(lesson.resources?.articles || []).map(r => ({ ...r, type: 'article' as const })),
+          ...(lesson.resources?.pdfs_docs || []).map(r => ({ ...r, type: 'docs' as const })),
         ];
 
         return {
@@ -61,6 +62,11 @@ export async function generateCourseFromText(text: string, duration?: string): P
 
     const course = transformAnalysisToCourse(analysis);
     
+    // Asynchronously audit the generated course
+    auditCourse({ courseContent: JSON.stringify(analysis, null, 2) })
+      .then(report => console.log('Course Audit Report:', JSON.stringify(report, null, 2)))
+      .catch(err => console.error('Auditing failed:', err));
+
     return course;
   } catch (e: any) {
     console.error('Error generating course:', e);
@@ -91,6 +97,11 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
     }
 
     const course = transformAnalysisToCourse(analysis);
+
+    // Asynchronously audit the generated course
+    auditCourse({ courseContent: JSON.stringify(analysis, null, 2) })
+      .then(report => console.log('Course Audit Report:', JSON.stringify(report, null, 2)))
+      .catch(err => console.error('Auditing failed:', err));
 
     return course;
   } catch (error: any) {
