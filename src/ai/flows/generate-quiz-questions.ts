@@ -8,7 +8,7 @@
  *
  * @file GenerateQuizQuestionsInput - The input type for the generateQuizQuestions function.
  * @file GenerateQuizQuestionsOutput - The return type for the generateQuizQuestions function.
- * @file generateQuizQuestions - A function that handles the quiz questions generation process.
+ * @file generateQuizQuestions - a function that handles the quiz questions generation process.
  */
 
 import {ai, geminiPro, generationConfig} from '@/ai/genkit';

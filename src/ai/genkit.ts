@@ -2,7 +2,8 @@
 import {genkit, GenerationCommonConfig} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
 
-export const geminiPro = googleAI.model('gemini-1.5-pro-latest');
+// Use a stable, generally available model.
+export const geminiPro = googleAI.model('gemini-1.5-pro');
 
 export const generationConfig: GenerationCommonConfig = {
   // As educational content can sometimes be flagged, we are disabling the safety settings
@@ -28,5 +29,9 @@ export const generationConfig: GenerationCommonConfig = {
 };
 
 export const ai = genkit({
-  plugins: [googleAI()],
+  plugins: [
+    // Initialize the Google AI plugin without forcing a beta API version.
+    // This allows the library to select the correct, stable endpoint.
+    googleAI(),
+  ],
 });
