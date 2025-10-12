@@ -250,7 +250,7 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
                     >
                         <UploadCloud className="mx-auto h-8 w-8 text-primary" />
                         <p className="mt-2 font-semibold text-foreground">
-                            {fileName || (isDraggingOver ? 'Drop the PDF here!' : 'Upload or Drag & Drop a PDF')}
+                            {isLoading ? 'Processing...' : (fileName || (isDraggingOver ? 'Drop the PDF here!' : 'Upload or Drag & Drop a PDF'))}
                         </p>
                         <p className="text-xs text-muted-foreground">The AI will read the file and build a course</p>
                         <input
