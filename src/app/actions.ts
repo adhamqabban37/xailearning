@@ -9,19 +9,21 @@ function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
   return {
     course_title: analysis.document_summary.type,
     description: `An AI-generated course based on the analyzed document.`,
-    total_estimated_time: analysis.document_summary.total_estimated_time,
+    total_estimated_time: analysis.document_summary.total_estimated_time || 'Not estimated',
     sessions: analysis.suggested_structure.map((session, sIndex) => ({
-      ...session,
       id: `session-${sIndex}`,
+      session_title: session.module_title,
       lessons: session.lessons.map((lesson, lIndex) => ({
-        ...lesson,
         id: `session-${sIndex}-lesson-${lIndex}`,
         lesson_title: lesson.lesson_title,
-        content_summary: lesson.content_snippet,
+        content_summary: lesson.key_points.join('\n'), // Convert key points array to a single string
+        content_snippet: lesson.key_points.join(', '),
+        key_points: lesson.key_points,
       })),
     })),
     checklist: analysis.improvement_recommendations,
-    readiness_score: analysis.readiness_score,
+    readiness_score: parseInt(analysis.readiness_score.replace('%', ''), 10),
+    analysis_report: analysis, // Keep the full report for detailed view
   };
 }
 
@@ -38,19 +40,7 @@ export async function generateCourseFromText(text: string, duration?: string): P
 
     const course = transformAnalysisToCourse(analysis);
     
-    const courseWithIds: Course = {
-      ...course,
-      sessions: course.sessions.map((session, sIndex) => ({
-        ...session,
-        id: `session-${sIndex}`,
-        lessons: session.lessons.map((lesson, lIndex) => ({
-          ...lesson,
-          id: `session-${sIndex}-lesson-${lIndex}`,
-        })),
-      })),
-    };
-
-    return courseWithIds;
+    return course;
   } catch (e: any) {
     console.error('Error generating course:', e);
     return { error: e.message || 'An unexpected error occurred while generating the course. Please try again later.' };
@@ -80,24 +70,10 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
     }
 
     const course = transformAnalysisToCourse(analysis);
-    
-    const courseWithIds: Course = {
-      ...course,
-      sessions: course.sessions.map((session, sIndex) => ({
-        ...session,
-        id: `session-${sIndex}`,
-        lessons: session.lessons.map((lesson, lIndex) => ({
-          ...lesson,
-          id: `session-${sIndex}-lesson-${lIndex}`,
-        })),
-      })),
-    };
 
-    return courseWithIds;
+    return course;
   } catch (error: any) {
     console.error('Error processing PDF with AI:', error);
     return { error: error.message || 'Failed to process the PDF file. Please ensure it is a valid PDF.' };
   }
 }
-
-    

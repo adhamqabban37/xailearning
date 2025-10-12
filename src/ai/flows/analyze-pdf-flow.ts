@@ -34,37 +34,54 @@ const analyzePdfPrompt = ai.definePrompt({
   name: 'analyzePdfPrompt',
   input: {schema: AnalyzePdfInputSchema},
   output: {schema: AnalyzeDocumentOutputSchema},
-  prompt: `You are an expert instructional designer and AI content analyst. Your job is to analyze the provided PDF document and determine its suitability for being transformed into a structured learning course. Adhere strictly to the provided JSON schema for your response.
+  prompt: `You are a senior AI systems engineer and instructional content architect.
+Your task is to power and stabilize the AI-driven PDF analysis pipeline for an educational learning platform.
+This system converts uploaded PDFs into structured, validated, ready-to-learn course data.
+
+Analyze the uploaded PDF content and perform the following checks and outputs.
 
 The user has specified that the desired length of the course should be {{{duration}}}. Please tailor the number of sessions and lessons, and the depth of the content, to fit this duration.
 
-Analyze the uploaded PDF content and perform the following checks and outputs:
+AI TASK FLOW
+Step 1 — Input Handling
+Accept the uploaded PDF.
+Automatically detect if the PDF is scanned or digital.
+If scanned (image-based), recommend OCR reprocessing in the debug_report.
 
-1. Extraction Debugging
-Confirm whether the text was extracted cleanly.
-Identify if the PDF seems to have scanned/image-based text.
-Detect the document type (e.g., roadmap, book, article, notes, syllabus).
-Return a summary of the document structure.
-Also, calculate and return the total estimated time required to learn all the content.
+Step 2 — Text Extraction and Cleaning
+Internally, you will receive cleaned text. Your job is to analyze its structure.
+Retain bullet points, numbered steps, and tables if present.
+Validate text completeness by detecting truncated or missing paragraphs.
 
-2. Content Structuring
-Identify modules / sessions / lessons automatically.
-Generate missing section titles if not found.
-Group similar paragraphs together logically under the right headings.
+Step 3 — Structure Detection
+Detect any hierarchy such as:
+Modules / Sections / Days / Lessons
+Subtopics / Steps / Exercises
+Generate missing titles if needed.
+Group all related paragraphs under the proper structure.
 
-3. Integrity & Completeness Check
-Report missing elements such as:
-- Titles not detected
-- Empty or unclear lesson content
-- Missing resource links or references
-- Repetitive or duplicated text
+Step 4 — Resource Detection
+Identify external resources:
+YouTube links, articles, PDFs, references
+Validate all links with real URLs (no placeholders).
+If URLs are missing but referenced (e.g. “See video below”), flag them.
 
-4. Learning Suitability Report
-Determine if the text is suitable for course generation with a numerical score.
-Suggest improvements like “Split long section into multiple lessons” or “Add learning objectives.” If the score is less than 85, you must provide at least 3 improvement recommendations.
+Step 5 — Quality & Error Debugging
+Detect and report the following:
+Broken formatting or repeated text
+Missing or unclear lesson titles
+Sections with no content
+Empty resources or broken URLs
+Excessive or missing whitespace
 
-5. Output Format (JSON)
-Return the entire analysis in the specified JSON format. Do not include any commentary outside the JSON structure.
+Step 6 — Output & Integration JSON
+Generate final structured output for front-end use. Adhere strictly to the JSON schema.
+
+MANDATORY OUTPUT RULES
+Always output valid JSON.
+Include text cleanliness, readiness score, and issue log.
+Ensure extraction and structuring steps never crash if data is incomplete.
+Provide actionable fixes in “improvement_recommendations.”
 
 Here is the PDF to analyze:
 
@@ -86,5 +103,3 @@ const analyzePdfFlow = ai.defineFlow(
     return output;
   }
 );
-
-    

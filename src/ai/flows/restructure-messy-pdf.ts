@@ -20,10 +20,10 @@ const AnalyzeDocumentInputSchema = z.object({
 });
 export type AnalyzeDocumentInput = z.infer<typeof AnalyzeDocumentInputSchema>;
 
+
+// Defines the detailed JSON structure for the AI's analysis output.
 const FileCheckSchema = z.object({
-  status: z
-    .string()
-    .describe('Status of text extraction, e.g., "clean" or "issues_detected".'),
+  status: z.string().describe('Status of text extraction, e.g., "clean" or "issues_detected".'),
   issues: z.array(z.string()).optional().describe('A list of issues found during extraction.'),
 });
 
@@ -31,31 +31,39 @@ const DocumentSummarySchema = z.object({
   type: z.string().describe('The detected document type (e.g., roadmap, book, article).'),
   sections_detected: z.number().describe('Number of main sections or chapters found.'),
   lessons_detected: z.number().describe('Total number of lessons or sub-sections found.'),
-  total_estimated_time: z.string().describe("The total estimated time to complete the course."),
+  detected_structure_confidence: z.string().describe('Confidence score for the detected structure, as a percentage.'),
+  total_estimated_time: z.string().optional().describe("The total estimated time to complete the course."),
 });
 
 const SuggestedLessonSchema = z.object({
   lesson_title: z.string().describe("The title of the lesson."),
-  content_snippet: z.string().describe("A brief snippet of the lesson's content."),
+  key_points: z.array(z.string()).describe("A brief list of key points for the lesson's content."),
 });
 
-const SuggestedSessionSchema = z.object({
-  session_title: z.string().describe('The title of the session.'),
+const SuggestedModuleSchema = z.object({
+  module_title: z.string().describe('The title of the module/session.'),
   lessons: z.array(SuggestedLessonSchema),
 });
 
+const DebugReportSchema = z.object({
+    scanned_pdf_detected: z.boolean().describe('Whether the document appears to be a scanned PDF.'),
+    text_cleanliness: z.string().describe('A percentage score representing the cleanliness of the extracted text.'),
+    missing_elements: z.array(z.string()).describe('A list of elements that are missing from the content.'),
+});
 
 export const AnalyzeDocumentOutputSchema = z.object({
   file_check: FileCheckSchema,
   document_summary: DocumentSummarySchema,
-  suggested_structure: z.array(SuggestedSessionSchema),
-  readiness_score: z.number().min(0).max(100).describe('A percentage score (0-100) indicating suitability for course generation.'),
+  suggested_structure: z.array(SuggestedModuleSchema),
+  readiness_score: z.string().describe('A percentage score (e.g., "89%") indicating suitability for course generation.'),
+  debug_report: DebugReportSchema,
   improvement_recommendations: z
     .array(z.string())
     .describe('A list of suggestions to improve the content.'),
 });
 
 export type AnalyzeDocumentOutput = z.infer<typeof AnalyzeDocumentOutputSchema>;
+
 
 export async function analyzeDocument(
   input: AnalyzeDocumentInput
@@ -67,36 +75,53 @@ const analyzeDocumentPrompt = ai.definePrompt({
   name: 'analyzeDocumentPrompt',
   input: {schema: AnalyzeDocumentInputSchema},
   output: {schema: AnalyzeDocumentOutputSchema},
-  prompt: `You are an expert instructional designer and AI content analyst. Your job is to analyze the provided text and determine its suitability for being transformed into a structured learning course. Adhere strictly to the provided JSON schema for your response.
+  prompt: `You are a senior AI systems engineer and instructional content architect.
+Your task is to power and stabilize the AI-driven analysis pipeline for an educational learning platform.
+This system converts pasted text into structured, validated, ready-to-learn course data.
+
+Analyze the uploaded text content and perform the following checks and outputs.
 
 The user has specified that the desired length of the course should be {{{duration}}}. Please tailor the number of sessions and lessons, and the depth of the content, to fit this duration.
 
-Analyze the uploaded text content and perform the following checks and outputs:
+AI TASK FLOW
+Step 1 — Input Handling
+Accept the pasted text.
 
-1. Extraction Debugging
-Confirm whether the text was extracted cleanly.
-Detect the document type (e.g., roadmap, book, article, notes, syllabus).
-Return a summary of the document structure.
-Also, calculate and return the total estimated time required to learn all the content.
+Step 2 — Text Extraction and Cleaning
+Your main task is to analyze the provided text.
+Remove extra whitespace, broken words, symbols, and irrelevant headers/footers.
+Retain bullet points, numbered steps, and tables if present.
+Validate text completeness by detecting truncated or missing paragraphs.
 
-2. Content Structuring
-Identify modules / sessions / lessons automatically.
-Generate missing section titles if not found.
-Group similar paragraphs together logically under the right headings.
+Step 3 — Structure Detection
+Detect any hierarchy such as:
+Modules / Sections / Days / Lessons
+Subtopics / Steps / Exercises
+Generate missing titles if needed.
+Group all related paragraphs under the proper structure.
 
-3. Integrity & Completeness Check
-Report missing elements such as:
-- Titles not detected
-- Empty or unclear lesson content
-- Missing resource links or references
-- Repetitive or duplicated text
+Step 4 — Resource Detection
+Identify external resources:
+YouTube links, articles, PDFs, references
+Validate all links with real URLs (no placeholders).
+If URLs are missing but referenced (e.g. “See video below”), flag them.
 
-4. Learning Suitability Report
-Determine if the text is suitable for course generation with a numerical score.
-Suggest improvements like “Split long section into multiple lessons” or “Add learning objectives.” If the score is less than 85, you must provide at least 3 improvement recommendations.
+Step 5 — Quality & Error Debugging
+Detect and report the following:
+Broken formatting or repeated text
+Missing or unclear lesson titles
+Sections with no content
+Empty resources or broken URLs
+Excessive or missing whitespace
 
-5. Output Format (JSON)
-Return the entire analysis in the specified JSON format. Do not include any commentary outside the JSON structure.
+Step 6 — Output & Integration JSON
+Generate final structured output for front-end use. Adhere strictly to the JSON schema.
+
+MANDATORY OUTPUT RULES
+Always output valid JSON.
+Include text cleanliness, readiness score, and issue log.
+Ensure extraction and structuring steps never crash if data is incomplete.
+Provide actionable fixes in “improvement_recommendations.”
 
 Here is the text to analyze:
 

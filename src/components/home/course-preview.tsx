@@ -97,7 +97,7 @@ export function CoursePreview({ initialCourse, onClear }: CoursePreviewProps) {
                 <AccordionItem value={`session-${sIndex}`} key={session.id} className={sIndex === course.sessions.length - 1 ? 'border-b-0' : ''}>
                   <AccordionTrigger className="text-lg font-semibold hover:no-underline">
                     <div className="flex items-center gap-4">
-                      <span className="text-primary">{`Session ${sIndex + 1}`}</span>
+                      <span className="text-primary">{`Module ${sIndex + 1}`}</span>
                       <span>{session.session_title}</span>
                     </div>
                   </AccordionTrigger>
@@ -106,7 +106,11 @@ export function CoursePreview({ initialCourse, onClear }: CoursePreviewProps) {
                       {session.lessons.map((lesson) => (
                         <li key={lesson.id} className="text-muted-foreground pl-2">
                           <p className="font-medium text-foreground">{lesson.lesson_title}</p>
-                          <p className='text-xs italic mt-1'>"{lesson.content_summary}"</p>
+                          {lesson.key_points && lesson.key_points.length > 0 &&
+                            <ul className='text-xs italic mt-1 list-disc pl-4'>
+                              {lesson.key_points.map((point, pIndex) => <li key={pIndex}>"{point}"</li>)}
+                            </ul>
+                          }
                         </li>
                       ))}
                     </ul>
