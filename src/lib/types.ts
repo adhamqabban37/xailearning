@@ -6,8 +6,6 @@ export type CourseAnalysis = AnalyzeDocumentOutput;
 // These types are now derived from the analysis output for consistency
 // but represent the final, interactable course structure.
 type SuggestedLesson = AnalyzeDocumentOutput['suggested_structure'][0]['lessons'][0];
-type SuggestedSession = Omit<AnalyzeDocumentOutput['suggested_structure'][0], 'lessons'>;
-
 
 // Augmented types with client-side IDs and more details for the interactive phase
 export type Lesson = SuggestedLesson & { 
@@ -15,7 +13,7 @@ export type Lesson = SuggestedLesson & {
   content_summary: string; // The full summary text for the lesson
   content_snippet: string; // A short snippet for previews
   resources?: { title: string; type: string; url: string }[];
-  quiz?: { question: string; answer: string; options?: string[] }[];
+  quiz?: { question: string; answer: string; explanation?: string; }[];
   timeEstimateMinutes?: number;
 };
 export type Session = { 

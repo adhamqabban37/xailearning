@@ -20,9 +20,11 @@ function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
         content_snippet: (lesson.key_points || []).join(', '),
         key_points: lesson.key_points || [],
         resources: lesson.resources ? lesson.resources.map(r => ({ title: r.title, type: r.type, url: r.url })) : [],
+        quiz: lesson.quiz ? lesson.quiz.map(q => ({ question: q.question, answer: q.answer, explanation: q.explanation })) : [],
+        timeEstimateMinutes: lesson.time_estimate_minutes,
       })),
     })),
-    checklist: analysis.improvement_recommendations,
+    checklist: analysis.improvement_recommendations || [],
     readiness_score: parseInt(analysis.readiness_score.replace('%', ''), 10),
     analysis_report: analysis, // Keep the full report for detailed view
   };

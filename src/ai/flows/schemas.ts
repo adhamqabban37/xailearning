@@ -16,15 +16,23 @@ const FileCheckSchema = z.object({
 const DocumentSummarySchema = z.object({
   type: z.string().describe('The detected document type (e.g., roadmap, book, article).'),
   sections_detected: z.number().describe('Number of main sections or chapters found.'),
-  lessons_detected: z.number().describe('Total number of lessons or sub-sections found.'),
+  lessons_detected: z-number().describe('Total number of lessons or sub-sections found.'),
   detected_structure_confidence: z.string().describe('Confidence score for the detected structure, as a percentage.'),
   total_estimated_time: z.string().optional().describe("The total estimated time to complete the course."),
 });
 
+const QuizQuestionSchema = z.object({
+  question: z.string().describe('The quiz question.'),
+  answer: z.string().describe('The correct answer to the question.'),
+  explanation: z.string().optional().describe('A brief explanation of the correct answer.'),
+});
+
 const SuggestedLessonSchema = z.object({
   lesson_title: z.string().describe("The title of the lesson."),
+  time_estimate_minutes: z.number().optional().describe("The estimated time in minutes to complete the lesson."),
   key_points: z.array(z.string()).describe("A brief list of key points for the lesson's content."),
   resources: z.array(ResourceSchema).optional().describe("A list of external resources for the lesson."),
+  quiz: z.array(QuizQuestionSchema).optional().describe("A short quiz with 1-2 questions to check understanding."),
 });
 
 const SuggestedModuleSchema = z.object({

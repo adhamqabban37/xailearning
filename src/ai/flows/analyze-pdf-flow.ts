@@ -74,7 +74,12 @@ Sections with no content
 Empty resources or broken URLs
 Excessive or missing whitespace
 
-Step 6 — Output & Integration JSON
+Step 6 — Add Interactive Elements
+For each lesson, add the following:
+- time_estimate_minutes: An integer representing the estimated time to complete the lesson.
+- quiz: An array with 1-2 quiz questions (question, answer, and optional explanation) to check understanding.
+
+Step 7 — Output & Integration JSON
 Generate final structured output for front-end use. Adhere strictly to the JSON schema.
 
 MANDATORY OUTPUT RULES
