@@ -31,58 +31,26 @@ const analyzeDocumentPrompt = ai.definePrompt({
   name: 'analyzeDocumentPrompt',
   input: {schema: AnalyzeDocumentInputSchema},
   output: {schema: AnalyzeDocumentOutputSchema},
-  prompt: `You are a senior AI systems engineer and instructional content architect.
-Your task is to power and stabilize the AI-driven analysis pipeline for an educational learning platform.
-This system converts pasted text into structured, validated, ready-to-learn course data.
+  prompt: `You are an expert instructional designer, AI learning architect, and content curator. Your task is to generate a complete, interactive, and engaging course from the provided text content.
 
-Analyze the uploaded text content and perform the following checks and outputs.
+Lesson Sequencing:
+Organize the course from easiest concepts to most advanced.
+Clearly indicate prerequisites or dependencies between lessons if you detect them.
 
-The user has specified that the desired length of the course should be {{{duration}}}. Please tailor the number of sessions and lessons, and the depth of the content, to fit this duration.
+Interactivity:
+Include short quizzes (1–3 questions per lesson) to check understanding.
+Include mini-projects, exercises, or prompts for active learning in each module.
+Suggest discussion prompts or reflection tasks where appropriate.
 
-AI TASK FLOW
-Step 1 — Input Handling
-Accept the pasted text.
+External Resources:
+Include valid, working URLs for YouTube videos, articles, and documentation.
+Provide clickable links with clear titles. For videos, suggest relevant timestamps if possible.
+Ensure resources are high-quality and authoritative.
 
-Step 2 — Text Extraction and Cleaning
-Your main task is to analyze the provided text.
-Remove extra whitespace, broken words, symbols, and irrelevant headers/footers.
-Retain bullet points, numbered steps, and tables if present.
-Validate text completeness by detecting truncated or missing paragraphs.
-
-Step 3 — Structure Detection
-Detect any hierarchy such as:
-Modules / Sections / Days / Lessons
-Subtopics / Steps / Exercises
-Generate missing titles if needed.
-Group all related paragraphs under the proper structure.
-
-Step 4 — Resource Detection
-Identify external resources:
-YouTube links, articles, PDFs, references
-Validate all links with real URLs (no placeholders).
-If URLs are missing but referenced (e.g. “See video below”), flag them.
-
-Step 5 — Quality & Error Debugging
-Detect and report the following:
-Broken formatting or repeated text
-Missing or unclear lesson titles
-Sections with no content
-Empty resources or broken URLs
-Excessive or missing whitespace
-
-Step 6 — Add Interactive Elements
-For each lesson, add the following:
-- time_estimate_minutes: An integer representing the estimated time to complete the lesson.
-- quiz: An array with 1-2 quiz questions (question, answer, and optional explanation) to check understanding.
-
-Step 7 — Output & Integration JSON
-Generate final structured output for front-end use. Adhere strictly to the JSON schema.
-
-MANDATORY OUTPUT RULES
-Always output valid JSON.
-Include text cleanliness, readiness score, and issue log.
-Ensure extraction and structuring steps never crash if data is incomplete.
-Provide actionable fixes in “improvement_recommendations.”
+Course Flow & Engagement:
+Each lesson should have a short hook to capture learner interest.
+Key points should be concise and actionable.
+Include an estimated time in minutes per lesson for pacing guidance.
 
 Here is the text to analyze:
 

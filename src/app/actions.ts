@@ -6,27 +6,44 @@ import { analyzePdf } from '@/ai/flows/analyze-pdf-flow';
 import type { Course, CourseAnalysis } from '@/lib/types';
 
 function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
+  const allLessons = (analysis.modules || []).flatMap(m => m.lessons || []);
+  const totalTime = allLessons.reduce((acc, lesson) => acc + (lesson.time_estimate_minutes || 0), 0);
+
   return {
-    course_title: analysis.document_summary.type,
-    description: `An AI-generated course based on the analyzed document.`,
-    total_estimated_time: analysis.document_summary.total_estimated_time || 'Not estimated',
-    sessions: (analysis.suggested_structure || []).map((session, sIndex) => ({
+    course_title: analysis.course_title,
+    description: `An AI-generated course on "${analysis.course_title}".`,
+    total_estimated_time: `${totalTime} minutes`,
+    sessions: (analysis.modules || []).map((module, sIndex) => ({
       id: `session-${sIndex}`,
-      session_title: session.module_title,
-      lessons: (session.lessons || []).map((lesson, lIndex) => ({
-        id: `session-${sIndex}-lesson-${lIndex}`,
-        lesson_title: lesson.lesson_title,
-        content_summary: (lesson.key_points || []).join('\n'),
-        content_snippet: (lesson.key_points || []).join(', '),
-        key_points: lesson.key_points || [],
-        resources: lesson.resources ? lesson.resources.map(r => ({ title: r.title, type: r.type, url: r.url })) : [],
-        quiz: lesson.quiz ? lesson.quiz.map(q => ({ question: q.question, answer: q.answer, explanation: q.explanation })) : [],
-        timeEstimateMinutes: lesson.time_estimate_minutes,
-      })),
+      session_title: module.module_title,
+      lessons: (module.lessons || []).map((lesson, lIndex) => {
+        const resources = [
+          ...(lesson.resources?.youtube || []).map(r => ({ ...r, type: 'video' })),
+          ...(lesson.resources?.articles || []).map(r => ({ ...r, type: 'article' })),
+          ...(lesson.resources?.pdfs_docs || []).map(r => ({ ...r, type: 'docs' })),
+        ];
+
+        return {
+          id: `session-${sIndex}-lesson-${lIndex}`,
+          lesson_title: lesson.lesson_title,
+          content_summary: (lesson.key_points || []).join('\n'),
+          content_snippet: (lesson.key_points || []).join(', '),
+          key_points: lesson.key_points || [],
+          resources: resources,
+          quiz: (lesson.quiz || []).map(q => ({
+            question: q.question,
+            answer: q.answer,
+            explanation: q.explanation
+          })),
+          timeEstimateMinutes: lesson.time_estimate_minutes,
+        };
+      }),
     })),
-    checklist: analysis.improvement_recommendations || [],
-    readiness_score: parseInt(analysis.readiness_score.replace('%', ''), 10),
-    analysis_report: analysis, // Keep the full report for detailed view
+    // These fields are no longer in the new schema, but the Course type expects them.
+    // We provide default/empty values to satisfy the type.
+    checklist: [],
+    readiness_score: 100,
+    analysis_report: analysis, // Keep the full report for detailed view if needed
   };
 }
 
@@ -37,7 +54,7 @@ export async function generateCourseFromText(text: string, duration?: string): P
   try {
     const analysis = await analyzeDocument({ textContent: text, duration: duration });
 
-    if (!analysis || !analysis.suggested_structure || analysis.suggested_structure.length === 0) {
+    if (!analysis || !analysis.modules || analysis.modules.length === 0) {
         return { error: 'The AI could not analyze the provided text. Please try again with different content.' };
     }
 
@@ -68,7 +85,7 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
 
     const analysis = await analyzePdf({ pdfDataUri, duration });
     
-    if (!analysis || !analysis.suggested_structure || analysis.suggested_structure.length === 0) {
+    if (!analysis || !analysis.modules || analysis.modules.length === 0) {
         return { error: 'The AI could not analyze the provided PDF. It might be empty, corrupted, or an image-only PDF.' };
     }
 

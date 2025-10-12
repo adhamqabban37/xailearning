@@ -3,19 +3,22 @@ import type { AnalyzeDocumentOutput } from '@/ai/flows/schemas';
 
 export type CourseAnalysis = AnalyzeDocumentOutput;
 
-// These types are now derived from the analysis output for consistency
-// but represent the final, interactable course structure.
-type SuggestedLesson = AnalyzeDocumentOutput['suggested_structure'][0]['lessons'][0];
+// Extract the lesson and resource types from the new schema
+type Module = AnalyzeDocumentOutput['modules'][0];
+type LessonSchema = Module['lessons'][0];
+type ResourceSchema = NonNullable<LessonSchema['resources']>['youtube'][0] & { type: string };
+
 
 // Augmented types with client-side IDs and more details for the interactive phase
-export type Lesson = SuggestedLesson & { 
+export type Lesson = Omit<LessonSchema, 'resources' | 'quiz'> & { 
   id: string;
   content_summary: string; // The full summary text for the lesson
   content_snippet: string; // A short snippet for previews
-  resources?: { title: string; type: string; url: string }[];
+  resources?: ResourceSchema[];
   quiz?: { question: string; answer: string; explanation?: string; }[];
   timeEstimateMinutes?: number;
 };
+
 export type Session = { 
   id: string; 
   session_title: string; // Renamed from module_title
@@ -28,9 +31,9 @@ export type Course = {
   course_title: string;
   description: string;
   sessions: Session[];
-  checklist?: string[];
+  checklist?: string[]; // Kept for compatibility, but not in new schema
   total_estimated_time?: string;
-  readiness_score: number;
+  readiness_score: number; // Kept for compatibility
   analysis_report: CourseAnalysis; // include the full analysis for potential detailed views
 };
 
