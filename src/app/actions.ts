@@ -16,10 +16,10 @@ function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
       lessons: session.lessons.map((lesson, lIndex) => ({
         id: `session-${sIndex}-lesson-${lIndex}`,
         lesson_title: lesson.lesson_title,
-        content_summary: lesson.key_points.join('\n'), // Convert key points array to a single string
+        content_summary: lesson.key_points.join('\n'),
         content_snippet: lesson.key_points.join(', '),
-        key_points: lesson.key_points,
-        resources: lesson.resources,
+        key_points: lesson.key_points || [],
+        resources: lesson.resources ? lesson.resources.map(r => ({ title: r.title, type: r.type, url: r.url })) : [],
       })),
     })),
     checklist: analysis.improvement_recommendations,
