@@ -25,7 +25,6 @@ import { promptTemplate } from "@/lib/prompt-template";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Label } from "../ui/label";
 
-
 const formSchema = z.object({
   topic: z.string().optional(),
   duration: z.string().optional(),
@@ -94,11 +93,11 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     }
   }
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setFileName(file.name);
-      onPdfSubmit(file);
+      await onPdfSubmit(file);
     }
   };
 
@@ -111,25 +110,22 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     setIsLoading(true);
     setError(null);
     
-    try {
-        const formData = new FormData();
-        formData.append('pdfFile', file);
-        const durationValue = form.getValues('duration');
-        if (durationValue) {
-          formData.append('duration', durationValue);
-        }
-        
-        const result = await generateCourseFromPdf(formData);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('duration', form.getValues('duration') || 'medium');
 
-        setIsLoading(false);
-        if ("error" in result) {
-            setError(result.error);
-        } else {
-            onCourseGenerated(result);
-        }
-    } catch (e: any) {
-        setError(e.message || "Failed to read the file.");
-        setIsLoading(false);
+    const result = await generateCourseFromPdf(formData);
+
+    setIsLoading(false);
+    setFileName(null);
+    if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+    }
+
+    if ("error" in result) {
+        setError(result.error);
+    } else {
+        onCourseGenerated(result);
     }
   };
   
@@ -289,7 +285,6 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
                                             className="min-h-[100px] text-base flex-1"
                                             {...field}
                                             autoFocus
-                                            onBlur={onTextSubmit}
                                         />
                                     </FormControl>
                                     {textValue && textValue.length > 100 && (
@@ -319,5 +314,3 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     </Card>
   );
 }
-
-    

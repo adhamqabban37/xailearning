@@ -4,8 +4,7 @@
 import { analyzeDocument } from '@/ai/flows/restructure-messy-pdf';
 import { auditCourse } from '@/ai/flows/audit-course';
 import type { Course, CourseAnalysis } from '@/lib/types';
-import { Buffer } from 'buffer';
-import pdf from 'pdf-parse';
+import pdf from 'pdf-parse/lib/pdf-parse.js';
 
 function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
   const allLessons = (analysis.modules || []).flatMap(m => m.lessons || []);
@@ -42,8 +41,8 @@ function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
         };
       }),
     })),
-    checklist: [], // This can be populated by the audit if needed
-    readiness_score: 100, // Placeholder, can be calculated from audit
+    checklist: [],
+    readiness_score: 100,
     analysis_report: analysis,
   };
 }
@@ -63,7 +62,6 @@ export async function generateCourseFromText(text: string, duration?: string): P
 
     const course = transformAnalysisToCourse(analysis);
     
-    // Asynchronously audit the generated course (non-blocking)
     auditCourse({ courseContent: JSON.stringify(analysis, null, 2) })
       .then(report => console.log('Course Audit Report:', JSON.stringify(report, null, 2)))
       .catch(err => console.error('Auditing failed:', err));
@@ -76,45 +74,38 @@ export async function generateCourseFromText(text: string, duration?: string): P
 }
 
 export async function generateCourseFromPdf(formData: FormData): Promise<Course | { error: string }> {
-  const file = formData.get('pdfFile') as File | null;
+  const file = formData.get('file') as File;
   const duration = formData.get('duration') as string | undefined;
 
   if (!file) {
-    return { error: 'No PDF file found. Please upload a file.' };
+    return { error: "No file was uploaded." };
   }
   
   if (file.type !== 'application/pdf') {
-    return { error: 'Invalid file type. Please upload a PDF.' };
+    return { error: "Invalid file type. Please upload a PDF." };
   }
 
-  // Validate file size (e.g., max 10MB)
-  const maxSize = 10 * 1024 * 1024; // 10MB
-  if (file.size > maxSize) {
-    return { error: 'PDF file is too large. Please upload a file smaller than 10MB.' };
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  if (file.size > MAX_FILE_SIZE) {
+      return { error: `File is too large. Please upload a PDF smaller than ${MAX_FILE_SIZE / 1024 / 1024}MB.` };
   }
 
   try {
-    console.log(`Processing PDF: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
-    
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    
     const data = await pdf(buffer);
-    const textContent = data.text;
     
-    if (!textContent.trim() || textContent.length < 100) {
-      return { error: 'The PDF appears to be empty or does not contain enough selectable text to create a course.' };
+    if (!data.text || data.text.trim().length < 100) {
+        return { error: 'The PDF content is too short or could not be extracted. Please try a different PDF.' };
     }
-    
-    return await generateCourseFromText(textContent, duration);
 
-  } catch (error: any) {
-    console.error('Error processing PDF:', error);
-    
-    if (error.message?.includes('Invalid PDF')) {
-      return { error: 'The uploaded file is not a valid PDF. Please check the file and try again.' };
+    return await generateCourseFromText(data.text, duration);
+
+  } catch (e: any) {
+    console.error("Error processing PDF on server:", e);
+    if (e.message?.includes('is not a PDF file')) {
+        return { error: 'The uploaded file does not appear to be a valid PDF.' };
     }
-    
-    return { error: error.message || 'Failed to process the PDF file. Please ensure it is a valid, text-based PDF.' };
+    return { error: "There was an error processing your PDF file. It might be corrupted or in an unsupported format." };
   }
 }
