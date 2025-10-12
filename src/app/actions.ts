@@ -4,7 +4,7 @@
 import { analyzeDocument } from '@/ai/flows/restructure-messy-pdf';
 import { auditCourse } from '@/ai/flows/audit-course';
 import type { Course, CourseAnalysis } from '@/lib/types';
-import pdf from 'pdf-parse';
+import { Buffer } from 'buffer';
 
 function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
   const allLessons = (analysis.modules || []).flatMap(m => m.lessons || []);
@@ -94,23 +94,15 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
     }
 
     console.log(`Processing PDF: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
-
-    // Convert file to buffer
-    const arrayBuffer = await file.arrayBuffer();
-    const fileBuffer = Buffer.from(arrayBuffer);
     
-    // Parse PDF
-    console.log('Parsing PDF content...');
-    const data = await pdf(fileBuffer);
-    const textContent = data.text;
-
-    console.log(`Extracted ${textContent.length} characters from PDF`);
-
-    if (!textContent.trim() || textContent.length < 100) {
-      return { error: 'The extracted text from the PDF is too short to create a course (less than 100 characters). The PDF might be empty or image-based.' };
+    const arrayBuffer = await file.arrayBuffer();
+    const textContent = Buffer.from(arrayBuffer).toString('base64');
+    
+    if (!textContent.trim()) {
+      return { error: 'The PDF appears to be empty or could not be read.' };
     }
     
-    // Use the existing text-based generation logic
+    // Use the existing text-based generation logic, passing the base64 content
     return await generateCourseFromText(textContent, duration);
 
   } catch (error: any) {
