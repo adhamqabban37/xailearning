@@ -1,6 +1,12 @@
 
 import {z} from 'genkit';
 
+const ResourceSchema = z.object({
+  title: z.string().describe("The title of the resource."),
+  type: z.string().describe("The type of resource (e.g., video, article, book)."),
+  url: z.string().url().describe("The full URL to the resource."),
+});
+
 // Defines the detailed JSON structure for the AI's analysis output.
 const FileCheckSchema = z.object({
   status: z.string().describe('Status of text extraction, e.g., "clean" or "issues_detected".'),
@@ -18,6 +24,7 @@ const DocumentSummarySchema = z.object({
 const SuggestedLessonSchema = z.object({
   lesson_title: z.string().describe("The title of the lesson."),
   key_points: z.array(z.string()).describe("A brief list of key points for the lesson's content."),
+  resources: z.array(ResourceSchema).optional().describe("A list of external resources for the lesson."),
 });
 
 const SuggestedModuleSchema = z.object({

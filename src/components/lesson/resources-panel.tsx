@@ -1,3 +1,4 @@
+
 import type { Resource } from "@/lib/types";
 import { YouTubeEmbed } from "./youtube-embed";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

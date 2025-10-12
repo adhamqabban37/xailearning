@@ -19,6 +19,7 @@ function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
         content_summary: lesson.key_points.join('\n'), // Convert key points array to a single string
         content_snippet: lesson.key_points.join(', '),
         key_points: lesson.key_points,
+        resources: lesson.resources,
       })),
     })),
     checklist: analysis.improvement_recommendations,
