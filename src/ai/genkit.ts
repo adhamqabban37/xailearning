@@ -2,9 +2,9 @@
 import {genkit, GenerationCommonConfig} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
 
-const geminiPro = googleAI.model('gemini-1.5-pro-latest');
+export const geminiPro = googleAI.model('gemini-1.5-pro-latest');
 
-const generationConfig: GenerationCommonConfig = {
+export const generationConfig: GenerationCommonConfig = {
   // As educational content can sometimes be flagged, we are disabling the safety settings
   // for this model. This should be used with caution and only for trusted content.
   safetySettings: [
@@ -31,11 +31,4 @@ export const ai = genkit({
   plugins: [googleAI({
     apiVersion: 'v1beta'
   })],
-  models: {
-    'gemini-pro': {
-      model: geminiPro,
-      config: generationConfig,
-    },
-  },
-  model: 'gemini-pro',
 });

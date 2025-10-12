@@ -11,7 +11,7 @@
  * @file generateQuizQuestions - A function that handles the quiz questions generation process.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai, geminiPro, generationConfig} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateQuizQuestionsInputSchema = z.object({
@@ -42,6 +42,8 @@ export async function generateQuizQuestions(
 
 const generateQuizQuestionsPrompt = ai.definePrompt({
   name: 'generateQuizQuestionsPrompt',
+  model: geminiPro,
+  config: generationConfig,
   input: {schema: GenerateQuizQuestionsInputSchema},
   output: {schema: GenerateQuizQuestionsOutputSchema},
   prompt: `You are an expert educator creating quizzes to test understanding of course content.

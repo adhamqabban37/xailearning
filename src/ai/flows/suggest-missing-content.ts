@@ -12,7 +12,7 @@
  * @fileExport SuggestMissingContentOutput - The return type for the suggestMissingContent function.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai, geminiPro, generationConfig} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SuggestMissingContentInputSchema = z.object({
@@ -35,6 +35,8 @@ export async function suggestMissingContent(input: SuggestMissingContentInput): 
 
 const suggestMissingContentPrompt = ai.definePrompt({
   name: 'suggestMissingContentPrompt',
+  model: geminiPro,
+  config: generationConfig,
   input: {schema: SuggestMissingContentInputSchema},
   output: {schema: SuggestMissingContentOutputSchema},
   prompt: `You are an AI assistant designed to identify missing elements in course content and provide a checklist with prompts to the user to fill in the gaps.

@@ -9,7 +9,7 @@
  * - AnalyzeDocumentOutput - The return type for the analyzeDocument function.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai, geminiPro, generationConfig} from '@/ai/genkit';
 import {z} from 'genkit';
 import {AnalyzeDocumentOutputSchema, type AnalyzeDocumentOutput} from './schemas';
 
@@ -29,6 +29,8 @@ export async function analyzeDocument(
 
 const analyzeDocumentPrompt = ai.definePrompt({
   name: 'analyzeDocumentPrompt',
+  model: geminiPro,
+  config: generationConfig,
   input: {schema: AnalyzeDocumentInputSchema},
   output: {schema: AnalyzeDocumentOutputSchema},
   prompt: `You are an expert AI instructional designer, course architect, and content curator.

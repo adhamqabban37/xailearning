@@ -12,7 +12,7 @@
  * @fileExport AuditCourseOutput - The return type for the auditCourse function.
  */
 
-import {ai} from '@/ai/genkit';
+import {ai, geminiPro, generationConfig} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AuditCourseInputSchema = z.object({
@@ -45,6 +45,8 @@ export async function auditCourse(
 
 const auditCoursePrompt = ai.definePrompt({
   name: 'auditCoursePrompt',
+  model: geminiPro,
+  config: generationConfig,
   input: {schema: AuditCourseInputSchema},
   output: {schema: AuditCourseOutputSchema},
   prompt: `You are an expert AI instructional designer, course evaluator, and AI content auditor.
