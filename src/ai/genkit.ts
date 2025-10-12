@@ -2,7 +2,7 @@
 import {genkit, GenerationCommonConfig} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
 
-const geminiFlash = googleAI.model('gemini-1.5-flash');
+const geminiPro = googleAI.model('gemini-1.5-pro-latest');
 
 const generationConfig: GenerationCommonConfig = {
   // As educational content can sometimes be flagged, we are disabling the safety settings
@@ -30,10 +30,10 @@ const generationConfig: GenerationCommonConfig = {
 export const ai = genkit({
   plugins: [googleAI()],
   models: {
-    'gemini-flash': {
-      model: geminiFlash,
+    'gemini-pro': {
+      model: geminiPro,
       config: generationConfig,
     },
   },
-  model: 'googleai/gemini-1.5-flash',
+  model: 'gemini-pro',
 });
