@@ -5,6 +5,7 @@ import { analyzeDocument } from '@/ai/flows/restructure-messy-pdf';
 import { auditCourse } from '@/ai/flows/audit-course';
 import type { Course, CourseAnalysis } from '@/lib/types';
 import { Buffer } from 'buffer';
+import pdf from 'pdf-parse';
 
 function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
   const allLessons = (analysis.modules || []).flatMap(m => m.lessons || []);
@@ -75,40 +76,41 @@ export async function generateCourseFromText(text: string, duration?: string): P
 }
 
 export async function generateCourseFromPdf(formData: FormData): Promise<Course | { error: string }> {
+  const file = formData.get('pdfFile') as File | null;
+  const duration = formData.get('duration') as string | undefined;
+
+  if (!file) {
+    return { error: 'No PDF file found. Please upload a file.' };
+  }
+  
+  if (file.type !== 'application/pdf') {
+    return { error: 'Invalid file type. Please upload a PDF.' };
+  }
+
+  // Validate file size (e.g., max 10MB)
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  if (file.size > maxSize) {
+    return { error: 'PDF file is too large. Please upload a file smaller than 10MB.' };
+  }
+
   try {
-    const file = formData.get('pdfFile') as File | null;
-    const duration = formData.get('duration') as string | undefined;
-
-    if (!file) {
-      return { error: 'No PDF file found in the form data.' };
-    }
-    
-    if (file.type !== 'application/pdf') {
-      return { error: 'Invalid file type. Please upload a PDF.' };
-    }
-
-    // Validate file size (e.g., max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      return { error: 'PDF file is too large. Please upload a file smaller than 10MB.' };
-    }
-
     console.log(`Processing PDF: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
     
     const arrayBuffer = await file.arrayBuffer();
-    const textContent = Buffer.from(arrayBuffer).toString('base64');
+    const buffer = Buffer.from(arrayBuffer);
+    
+    const data = await pdf(buffer);
+    const textContent = data.text;
     
     if (!textContent.trim()) {
-      return { error: 'The PDF appears to be empty or could not be read.' };
+      return { error: 'The PDF appears to be empty or does not contain selectable text.' };
     }
     
-    // Use the existing text-based generation logic, passing the base64 content
     return await generateCourseFromText(textContent, duration);
 
   } catch (error: any) {
     console.error('Error processing PDF:', error);
     
-    // Provide more specific error messages
     if (error.message?.includes('Invalid PDF')) {
       return { error: 'The uploaded file is not a valid PDF. Please check the file and try again.' };
     }
