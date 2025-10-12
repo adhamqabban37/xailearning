@@ -1,5 +1,5 @@
 
-import type { AnalyzeDocumentOutput } from '@/ai/flows/restructure-messy-pdf';
+import type { AnalyzeDocumentOutput } from '@/ai/flows/schemas';
 
 export type CourseAnalysis = AnalyzeDocumentOutput;
 

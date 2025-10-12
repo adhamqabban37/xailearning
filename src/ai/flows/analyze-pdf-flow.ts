@@ -11,7 +11,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import {AnalyzeDocumentOutputSchema, type AnalyzeDocumentOutput} from './restructure-messy-pdf';
+import {AnalyzeDocumentOutputSchema, type AnalyzeDocumentOutput} from './schemas';
 
 const AnalyzePdfInputSchema = z.object({
   pdfDataUri: z
