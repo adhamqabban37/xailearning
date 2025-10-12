@@ -95,6 +95,9 @@ const auditCourseFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await auditCoursePrompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('The AI failed to generate an audit report.');
+    }
+    return output;
   }
 );
