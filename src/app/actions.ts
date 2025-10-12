@@ -41,11 +41,9 @@ function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
         };
       }),
     })),
-    // These fields are no longer in the new schema, but the Course type expects them.
-    // We provide default/empty values to satisfy the type.
     checklist: [],
     readiness_score: 100,
-    analysis_report: analysis, // Keep the full report for detailed view if needed
+    analysis_report: analysis,
   };
 }
 
@@ -53,53 +51,76 @@ export async function generateCourseFromText(text: string, duration?: string): P
   if (!text.trim() || text.length < 100) {
     return { error: 'Please enter a substantial amount of text (at least 100 characters) to create a course.' };
   }
+  
   try {
+    console.log('Starting course generation from text...');
     const analysis = await analyzeDocument({ textContent: text, duration: duration });
 
     if (!analysis || !analysis.modules || analysis.modules.length === 0) {
-        return { error: 'The AI could not analyze the provided text. Please try again with different content.' };
+      return { error: 'The AI could not analyze the provided text. Please try again with different content.' };
     }
 
     const course = transformAnalysisToCourse(analysis);
     
-    // Asynchronously audit the generated course
+    // Asynchronously audit the generated course (non-blocking)
     auditCourse({ courseContent: JSON.stringify(analysis, null, 2) })
       .then(report => console.log('Course Audit Report:', JSON.stringify(report, null, 2)))
       .catch(err => console.error('Auditing failed:', err));
 
     return course;
   } catch (e: any) {
-    console.error('Error generating course:', e);
+    console.error('Error generating course from text:', e);
     return { error: e.message || 'An unexpected error occurred while generating the course. Please try again later.' };
   }
 }
 
 export async function generateCourseFromPdf(formData: FormData): Promise<Course | { error: string }> {
-  const file = formData.get('pdfFile') as File | null;
-  const duration = formData.get('duration') as string | undefined;
-
-  if (!file) {
-    return { error: 'No PDF file found in the form data.' };
-  }
-  
-  if (file.type !== 'application/pdf') {
-    return { error: 'Invalid file type. Please upload a PDF.' };
-  }
-
   try {
-    const fileBuffer = Buffer.from(await file.arrayBuffer());
+    const file = formData.get('pdfFile') as File | null;
+    const duration = formData.get('duration') as string | undefined;
+
+    if (!file) {
+      return { error: 'No PDF file found in the form data.' };
+    }
+    
+    if (file.type !== 'application/pdf') {
+      return { error: 'Invalid file type. Please upload a PDF.' };
+    }
+
+    // Validate file size (e.g., max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      return { error: 'PDF file is too large. Please upload a file smaller than 10MB.' };
+    }
+
+    console.log(`Processing PDF: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+
+    // Convert file to buffer
+    const arrayBuffer = await file.arrayBuffer();
+    const fileBuffer = Buffer.from(arrayBuffer);
+    
+    // Parse PDF
+    console.log('Parsing PDF content...');
     const data = await pdf(fileBuffer);
     const textContent = data.text;
+
+    console.log(`Extracted ${textContent.length} characters from PDF`);
 
     if (!textContent.trim() || textContent.length < 100) {
       return { error: 'The extracted text from the PDF is too short to create a course (less than 100 characters). The PDF might be empty or image-based.' };
     }
     
-    // Now that we have the text, we can use the existing text-based generation logic.
+    // Use the existing text-based generation logic
     return await generateCourseFromText(textContent, duration);
 
   } catch (error: any) {
     console.error('Error processing PDF:', error);
+    
+    // Provide more specific error messages
+    if (error.message?.includes('Invalid PDF')) {
+      return { error: 'The uploaded file is not a valid PDF. Please check the file and try again.' };
+    }
+    
     return { error: error.message || 'Failed to process the PDF file. Please ensure it is a valid, text-based PDF.' };
   }
 }
