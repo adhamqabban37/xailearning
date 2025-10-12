@@ -72,7 +72,7 @@ const analyzeDocumentFlow = ai.defineFlow(
     inputSchema: AnalyzeDocumentInputSchema,
     outputSchema: AnalyzeDocumentOutputSchema,
   },
-  async input => {
+  async (input) => {
     const {output} = await analyzeDocumentPrompt(input);
     if (!output) {
       throw new Error("The AI failed to generate a document analysis.");

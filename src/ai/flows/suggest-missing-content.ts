@@ -54,7 +54,7 @@ const suggestMissingContentFlow = ai.defineFlow(
     inputSchema: SuggestMissingContentInputSchema,
     outputSchema: SuggestMissingContentOutputSchema,
   },
-  async input => {
+  async (input) => {
     const {output} = await suggestMissingContentPrompt(input);
     if (!output) {
       throw new Error('The AI failed to suggest missing content.');
