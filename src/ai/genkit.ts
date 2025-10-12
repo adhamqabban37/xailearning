@@ -30,8 +30,8 @@ export const generationConfig: GenerationCommonConfig = {
 
 export const ai = genkit({
   plugins: [
-    // Initialize the Google AI plugin without forcing a beta API version.
-    // This allows the library to select the correct, stable endpoint.
+    // Initialize the Google AI plugin.
+    // By not specifying apiVersion, the client will use the default stable endpoint.
     googleAI(),
   ],
 });
