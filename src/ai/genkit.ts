@@ -29,10 +29,10 @@ const generationConfig: GenerationCommonConfig = {
 export const ai = genkit({
   plugins: [googleAI()],
   models: {
-    'gemini-flash': {
+    'gemini-1.5-flash': {
       model: geminiFlash,
       config: generationConfig,
     },
   },
-  model: 'gemini-flash',
+  model: 'googleai/gemini-1.5-flash',
 });
