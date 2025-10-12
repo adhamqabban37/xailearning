@@ -1,4 +1,5 @@
- 'use server';
+
+'use server';
 
 /**
  * @fileOverview This file defines a Genkit flow to suggest missing content in a course structure.
@@ -39,7 +40,7 @@ const suggestMissingContentPrompt = ai.definePrompt({
   prompt: `You are an AI assistant designed to identify missing elements in course content and provide a checklist with prompts to the user to fill in the gaps.
 
   Analyze the following course content:
-  {{courseContent}}
+  {{{courseContent}}}
 
   Identify any missing elements such as session titles, lesson steps, time estimates for each step, external resources (videos, links), and quiz questions per session.
 
@@ -55,6 +56,9 @@ const suggestMissingContentFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await suggestMissingContentPrompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('The AI failed to suggest missing content.');
+    }
+    return output;
   }
 );
