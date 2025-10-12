@@ -31,14 +31,17 @@ const analyzeDocumentPrompt = ai.definePrompt({
   name: 'analyzeDocumentPrompt',
   input: {schema: AnalyzeDocumentInputSchema},
   output: {schema: AnalyzeDocumentOutputSchema},
-  prompt: `You are an expert instructional designer, AI learning architect, and content curator. Your task is to generate a complete, interactive, and engaging course from the provided text content.
+  prompt: `You are an expert instructional designer, AI learning architect, and content curator.
+Your task is to generate a complete, interactive, and engaging course from the provided text content.
+
+Requirements:
 
 Lesson Sequencing:
 Organize the course from easiest concepts to most advanced.
 Clearly indicate prerequisites or dependencies between lessons if you detect them.
 
 Interactivity:
-Include short quizzes (1–3 questions per lesson) to check understanding.
+Include short quizzes (1-3 questions per lesson) to check understanding.
 Include mini-projects, exercises, or prompts for active learning in each module.
 Suggest discussion prompts or reflection tasks where appropriate.
 
