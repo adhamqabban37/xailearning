@@ -10,14 +10,14 @@ function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
     course_title: analysis.document_summary.type,
     description: `An AI-generated course based on the analyzed document.`,
     total_estimated_time: analysis.document_summary.total_estimated_time || 'Not estimated',
-    sessions: analysis.suggested_structure.map((session, sIndex) => ({
+    sessions: (analysis.suggested_structure || []).map((session, sIndex) => ({
       id: `session-${sIndex}`,
       session_title: session.module_title,
-      lessons: session.lessons.map((lesson, lIndex) => ({
+      lessons: (session.lessons || []).map((lesson, lIndex) => ({
         id: `session-${sIndex}-lesson-${lIndex}`,
         lesson_title: lesson.lesson_title,
-        content_summary: lesson.key_points.join('\n'),
-        content_snippet: lesson.key_points.join(', '),
+        content_summary: (lesson.key_points || []).join('\n'),
+        content_snippet: (lesson.key_points || []).join(', '),
         key_points: lesson.key_points || [],
         resources: lesson.resources ? lesson.resources.map(r => ({ title: r.title, type: r.type, url: r.url })) : [],
       })),
