@@ -16,7 +16,7 @@ const FileCheckSchema = z.object({
 const DocumentSummarySchema = z.object({
   type: z.string().describe('The detected document type (e.g., roadmap, book, article).'),
   sections_detected: z.number().describe('Number of main sections or chapters found.'),
-  lessons_detected: z-number().describe('Total number of lessons or sub-sections found.'),
+  lessons_detected: z.number().describe('Total number of lessons or sub-sections found.'),
   detected_structure_confidence: z.string().describe('Confidence score for the detected structure, as a percentage.'),
   total_estimated_time: z.string().optional().describe("The total estimated time to complete the course."),
 });

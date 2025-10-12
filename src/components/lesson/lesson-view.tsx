@@ -43,7 +43,7 @@ export function LessonView({ initialSession }: LessonViewProps) {
     }
   };
 
-  const completedCount = Object.keys(completedSteps).length;
+  const completedCount = Object.values(completedSteps).filter(Boolean).length;
   const totalStepsInSession = session.lessons.length;
   const isSessionComplete = completedCount === totalStepsInSession;
 
