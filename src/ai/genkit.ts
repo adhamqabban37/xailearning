@@ -28,7 +28,9 @@ const generationConfig: GenerationCommonConfig = {
 };
 
 export const ai = genkit({
-  plugins: [googleAI()],
+  plugins: [googleAI({
+    apiVersion: 'v1beta'
+  })],
   models: {
     'gemini-pro': {
       model: geminiPro,
