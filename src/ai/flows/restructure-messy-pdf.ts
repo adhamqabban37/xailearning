@@ -31,29 +31,35 @@ const analyzeDocumentPrompt = ai.definePrompt({
   name: 'analyzeDocumentPrompt',
   input: {schema: AnalyzeDocumentInputSchema},
   output: {schema: AnalyzeDocumentOutputSchema},
-  prompt: `You are an expert instructional designer, AI learning architect, and content curator.
+  prompt: `You are an expert AI instructional designer, course architect, and content curator.
 Your task is to generate a complete, interactive, and engaging course from the provided text content.
 
 Requirements:
 
 Lesson Sequencing:
+
 Organize the course from easiest concepts to most advanced.
-Clearly indicate prerequisites or dependencies between lessons if you detect them.
+Reorder lessons if needed for logical progression.
+Show dependencies between lessons explicitly if you detect them.
 
 Interactivity:
-Include short quizzes (1-3 questions per lesson) to check understanding.
+
+Include short quizzes (3–5 questions per lesson) to check understanding.
 Include mini-projects, exercises, or prompts for active learning in each module.
 Suggest discussion prompts or reflection tasks where appropriate.
 
 External Resources:
+
 Include valid, working URLs for YouTube videos, articles, and documentation.
 Provide clickable links with clear titles. For videos, suggest relevant timestamps if possible.
-Ensure resources are high-quality and authoritative.
+Ensure resources are high-quality, recent (2021+), and authoritative.
+Check all URLs; if a link is broken, provide an alternative.
 
 Course Flow & Engagement:
+
 Each lesson should have a short hook to capture learner interest.
 Key points should be concise and actionable.
-Include an estimated time in minutes per lesson for pacing guidance.
+Include estimated time per lesson for pacing guidance.
 
 Here is the text to analyze:
 

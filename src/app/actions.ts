@@ -32,6 +32,7 @@ function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
           resources: resources,
           quiz: (lesson.quiz || []).map(q => ({
             question: q.question,
+            options: q.options,
             answer: q.answer,
             explanation: q.explanation
           })),

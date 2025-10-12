@@ -6,7 +6,13 @@ export type CourseAnalysis = AnalyzeDocumentOutput;
 // Extract the lesson and resource types from the new schema
 type Module = AnalyzeDocumentOutput['modules'][0];
 type LessonSchema = Module['lessons'][0];
-type ResourceSchema = NonNullable<LessonSchema['resources']>['youtube'][0] & { type: string };
+
+// A generic resource type for the client, combining all possible fields
+type ResourceSchema = (
+    (NonNullable<LessonSchema['resources']>['youtube'][0] & { type: 'video' }) |
+    (NonNullable<LessonSchema['resources']>['articles'][0] & { type: 'article' }) |
+    (NonNullable<LessonSchema['resources']>['pdfs_docs'][0] & { type: 'docs' })
+)
 
 
 // Augmented types with client-side IDs and more details for the interactive phase
@@ -15,7 +21,12 @@ export type Lesson = Omit<LessonSchema, 'resources' | 'quiz'> & {
   content_summary: string; // The full summary text for the lesson
   content_snippet: string; // A short snippet for previews
   resources?: ResourceSchema[];
-  quiz?: { question: string; answer: string; explanation?: string; }[];
+  quiz?: { 
+    question: string; 
+    answer: string; 
+    options?: string[];
+    explanation?: string; 
+  }[];
   timeEstimateMinutes?: number;
 };
 
