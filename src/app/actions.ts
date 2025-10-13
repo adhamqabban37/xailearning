@@ -85,7 +85,7 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
     return { error: "Invalid file type. Please upload a PDF." };
   }
 
-  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
   if (file.size > MAX_FILE_SIZE) {
       return { error: `File is too large. Please upload a PDF smaller than ${MAX_FILE_SIZE / 1024 / 1024}MB.` };
   }

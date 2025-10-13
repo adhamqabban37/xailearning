@@ -86,9 +86,9 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
     setIsLoading(false);
     setIsPasting(false);
 
-    if ("error" in result) {
+    if (result && "error" in result) {
       setError(result.error);
-    } else {
+    } else if (result) {
       onCourseGenerated(result);
     }
   }
@@ -122,9 +122,9 @@ export function ContentForm({ onCourseGenerated, setIsLoading, isLoading }: Cont
         fileInputRef.current.value = "";
     }
 
-    if ("error" in result) {
+    if (result && "error" in result) {
         setError(result.error);
-    } else {
+    } else if (result) {
         onCourseGenerated(result);
     }
   };
