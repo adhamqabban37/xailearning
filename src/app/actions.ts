@@ -4,7 +4,7 @@
 import { analyzeDocument } from '@/ai/flows/restructure-messy-pdf';
 import { auditCourse } from '@/ai/flows/audit-course';
 import type { Course, CourseAnalysis } from '@/lib/types';
-import pdf from 'pdf-parse';
+import { parsePdfBuffer } from '@/lib/pdf';
 
 function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
   const allLessons = (analysis.modules || []).flatMap(m => m.lessons || []);
@@ -85,21 +85,12 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
   if (file.size > MAX_FILE_SIZE) {
       return { error: `File is too large. Please upload a PDF smaller than ${MAX_FILE_SIZE / 1024 / 1024}MB.` };
   }
-
-  if (file.type !== 'application/pdf') {
-    console.warn(`File uploaded with potentially incorrect MIME type: ${file.type}`);
-  }
-
+  
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const buffer = Buffer.from(await file.arrayBuffer());
     
-    const header = buffer.slice(0, 5).toString('utf8');
-    if (!header.includes('%PDF')) {
-      return { error: 'The uploaded file does not appear to be a valid PDF.' };
-    }
-
-    const data = await pdf(buffer);
+    // The parsePdfBuffer function will validate the PDF header.
+    const data = await parsePdfBuffer(buffer);
     
     if (!data.text || data.text.trim().length < 100) {
         return { error: 'The PDF content is too short or could not be extracted. Please try a different PDF.' };
@@ -109,9 +100,7 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
 
   } catch (e: any) {
     console.error("Error processing PDF on server:", e);
-    if (e.message?.includes('is not a PDF file')) {
-        return { error: 'The uploaded file does not appear to be a valid PDF.' };
-    }
-    return { error: "There was an error processing your PDF file. It might be corrupted or in an unsupported format." };
+    // Return a user-friendly error message, avoiding technical details.
+    return { error: e.message || "There was an error processing your PDF file. It might be corrupted or in an unsupported format." };
   }
 }
