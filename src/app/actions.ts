@@ -89,7 +89,6 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
     
-    // The parsePdfBuffer function will validate the PDF header.
     const data = await parsePdfBuffer(buffer);
     
     if (!data.text || data.text.trim().length < 100) {
@@ -100,7 +99,6 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
 
   } catch (e: any) {
     console.error("Error processing PDF on server:", e);
-    // Return a user-friendly error message, avoiding technical details.
     return { error: e.message || "There was an error processing your PDF file. It might be corrupted or in an unsupported format." };
   }
 }

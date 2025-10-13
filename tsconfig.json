@@ -1,3 +1,4 @@
+
 {
   "compilerOptions": {
     "target": "ES2017",
@@ -21,8 +22,8 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["node", "@types/pdf-parse"]
+    "types": ["node", "@types/pdf-parse", "@types/multer"]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "pages/api/upload.ts"],
   "exclude": ["node_modules"]
 }

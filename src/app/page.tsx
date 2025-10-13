@@ -9,6 +9,7 @@ import { ContentForm } from '@/components/home/content-form';
 import { CoursePreview } from '@/components/home/course-preview';
 import { Loader2, BookOpenCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import PdfUploadClient from '@/components/home/PdfUploadClient';
 
 export default function Home() {
   const [course, setCourse] = useState<Course | null>(null);
@@ -85,6 +86,11 @@ export default function Home() {
 
       <section className="mb-16">
         <ContentForm onCourseGenerated={setCourse} isLoading={isLoading} setIsLoading={setIsLoading} />
+      </section>
+      
+      <section className="mb-16 max-w-4xl mx-auto">
+        <h2 className="text-2xl font-bold text-center mb-4">PDF Upload Test</h2>
+        <PdfUploadClient />
       </section>
     </div>
   );
