@@ -93,6 +93,13 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
   try {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+    
+    // Magic byte check for PDF
+    const header = buffer.slice(0, 5).toString('utf8');
+    if (!header.includes('%PDF')) {
+      return { error: 'File does not appear to be a valid PDF.' };
+    }
+
     const data = await pdf(buffer);
     
     if (!data.text || data.text.trim().length < 100) {
