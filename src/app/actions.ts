@@ -74,15 +74,11 @@ export async function generateCourseFromText(text: string, duration?: string): P
 }
 
 export async function generateCourseFromPdf(formData: FormData): Promise<Course | { error: string }> {
-  const file = formData.get('file') as File;
+  const file = formData.get('file') as File | null;
   const duration = formData.get('duration') as string | undefined;
 
   if (!file) {
     return { error: "No file was uploaded." };
-  }
-  
-  if (file.type !== 'application/pdf') {
-    return { error: "Invalid file type. Please upload a PDF." };
   }
 
   const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
@@ -90,14 +86,20 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
       return { error: `File is too large. Please upload a PDF smaller than ${MAX_FILE_SIZE / 1024 / 1024}MB.` };
   }
 
+  // Although client-side checks are helpful, server-side validation is crucial.
+  if (file.type !== 'application/pdf') {
+    // This is a good first check, but we'll also check the file's content.
+    console.warn(`File uploaded with incorrect MIME type: ${file.type}`);
+  }
+
   try {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     
-    // Magic byte check for PDF
+    // Magic byte check for PDF header
     const header = buffer.slice(0, 5).toString('utf8');
     if (!header.includes('%PDF')) {
-      return { error: 'File does not appear to be a valid PDF.' };
+      return { error: 'File does not appear to be a valid PDF (magic byte check failed).' };
     }
 
     const data = await pdf(buffer);
@@ -106,6 +108,7 @@ export async function generateCourseFromPdf(formData: FormData): Promise<Course 
         return { error: 'The PDF content is too short or could not be extracted. Please try a different PDF.' };
     }
 
+    // Now that we have the text, we can use the existing text-to-course function.
     return await generateCourseFromText(data.text, duration);
 
   } catch (e: any) {
