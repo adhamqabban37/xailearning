@@ -1,17 +1,23 @@
+"use client";
+import { useRef, useState } from "react";
+import type { Course } from "@/lib/types";
+import { generateCourseFromText } from "@/app/actions";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import { Loader2, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
-'use client';
-import { useState } from 'react';
-import { generateCourseFromPdf } from '@/app/actions';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { Loader2, AlertCircle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+type Props = {
+  onCourseGenerated?: (course: Course) => void;
+};
 
-export default function PdfUploadClient() {
+export default function PdfUploadClient({ onCourseGenerated }: Props) {
   const [result, setResult] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [phase, setPhase] = useState<string | null>(null);
+  const slowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -22,15 +28,59 @@ export default function PdfUploadClient() {
     const fd = new FormData(e.currentTarget);
 
     try {
-      // Using Server Action
-      const courseResult = await generateCourseFromPdf(fd);
-      if (courseResult && 'error' in courseResult) {
+      setPhase("Uploading and extracting PDF text...");
+      // 1) Parse via /api/upload quickly with a timeout
+      const controller = new AbortController();
+      const to = setTimeout(() => controller.abort(), 25_000);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: fd,
+        signal: controller.signal,
+      }).finally(() => clearTimeout(to));
+
+      if (!res.ok) {
+        let msg = `Failed to upload/parse PDF (status ${res.status}).`;
+        try {
+          const err = await res.json();
+          if (err?.error) msg = err.error;
+        } catch {}
+        throw new Error(msg);
+      }
+
+      const parsed = await res.json();
+      let text: string = parsed?.text || "";
+      if (!text || text.trim().length < 100) {
+        throw new Error(
+          "The PDF content is too short or could not be extracted. Please try a different PDF."
+        );
+      }
+      // 2) Cap long text to speed up AI
+      const MAX_CHARS = 16000; // ~16k chars cap
+      if (text.length > MAX_CHARS) {
+        text = text.slice(0, MAX_CHARS);
+      }
+
+      setPhase("Analyzing with AI...");
+      slowTimer.current = setTimeout(() => {
+        setPhase("Still analyzing... larger PDFs can take up to a minute.");
+      }, 20_000);
+
+      const courseResult = await generateCourseFromText(text);
+      if (slowTimer.current) {
+        clearTimeout(slowTimer.current);
+        slowTimer.current = null;
+      }
+      if (courseResult && "error" in courseResult) {
         throw new Error(courseResult.error);
       }
-      setResult('PDF processed and course generated successfully. This component only displays a success message.');
-
+      if (courseResult && onCourseGenerated) {
+        onCourseGenerated(courseResult as Course);
+      }
+      setResult("PDF processed and course generated successfully.");
+      setPhase(null);
     } catch (err: any) {
-      setError(err.message || 'Unknown error during upload.');
+      setError(err.message || "Unknown error during upload.");
+      setPhase(null);
     } finally {
       setLoading(false);
     }
@@ -38,33 +88,44 @@ export default function PdfUploadClient() {
 
   return (
     <Card>
-        <CardHeader>
-            <CardTitle>Upload a PDF</CardTitle>
-        </CardHeader>
-        <CardContent>
-            <form onSubmit={onSubmit} className="space-y-4">
-              <Input type="file" name="file" accept="application/pdf" required disabled={loading} />
-              <Button type="submit" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Upload and Parse
-              </Button>
-            </form>
-            {error && (
-                <Alert variant="destructive" className="mt-4">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
-                </Alert>
-            )}
-            {result && (
-                <Alert className="mt-4">
-                    <AlertTitle>Success!</AlertTitle>
-                    <AlertDescription>
-                        <pre className="mt-2 w-full whitespace-pre-wrap rounded-md bg-slate-950 p-4 text-slate-50">{result.slice(0, 500)}...</pre>
-                    </AlertDescription>
-                </Alert>
-            )}
-        </CardContent>
+      <CardHeader>
+        <CardTitle>Upload a PDF</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={onSubmit} className="space-y-4">
+          <Input
+            type="file"
+            name="file"
+            accept="application/pdf"
+            required
+            disabled={loading}
+          />
+          <Button type="submit" disabled={loading}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Upload and Parse
+          </Button>
+        </form>
+        {phase && (
+          <div className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
+            <Clock className="h-4 w-4" />
+            <span>{phase}</span>
+          </div>
+        )}
+        {error && (
+          <Alert variant="destructive" className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        {result && (
+          <Alert className="mt-4">
+            <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <AlertTitle>Success!</AlertTitle>
+            <AlertDescription>{result}</AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
     </Card>
   );
 }

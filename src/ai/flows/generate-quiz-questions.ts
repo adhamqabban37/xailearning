@@ -1,5 +1,4 @@
-
-'use server';
+"use server";
 
 /**
  * @fileOverview This file defines a Genkit flow to generate quiz questions from text content.
@@ -11,28 +10,34 @@
  * @file generateQuizQuestions - a function that handles the quiz questions generation process.
  */
 
-import {ai, geminiPro, generationConfig} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai, geminiPro, generationConfig } from "@/ai/genkit";
+import { z } from "genkit";
 
 const GenerateQuizQuestionsInputSchema = z.object({
-  textContent: z.string().describe('The text content to generate quiz questions from.'),
+  textContent: z
+    .string()
+    .describe("The text content to generate quiz questions from."),
 });
 
-export type GenerateQuizQuestionsInput = z.infer<typeof GenerateQuizQuestionsInputSchema>;
+export type GenerateQuizQuestionsInput = z.infer<
+  typeof GenerateQuizQuestionsInputSchema
+>;
 
 const GenerateQuizQuestionsOutputSchema = z.object({
   questions: z
     .array(
       z.object({
-        question: z.string().describe('The quiz question.'),
-        answer: z.string().describe('The correct answer to the question.'),
-        explanation: z.string().describe('Explanation of the answer.'),
+        question: z.string().describe("The quiz question."),
+        answer: z.string().describe("The correct answer to the question."),
+        explanation: z.string().describe("Explanation of the answer."),
       })
     )
-    .describe('The generated quiz questions.'),
+    .describe("The generated quiz questions."),
 });
 
-export type GenerateQuizQuestionsOutput = z.infer<typeof GenerateQuizQuestionsOutputSchema>;
+export type GenerateQuizQuestionsOutput = z.infer<
+  typeof GenerateQuizQuestionsOutputSchema
+>;
 
 export async function generateQuizQuestions(
   input: GenerateQuizQuestionsInput
@@ -41,11 +46,11 @@ export async function generateQuizQuestions(
 }
 
 const generateQuizQuestionsPrompt = ai.definePrompt({
-  name: 'generateQuizQuestionsPrompt',
+  name: "generateQuizQuestionsPrompt",
   model: geminiPro,
   config: generationConfig,
-  input: {schema: GenerateQuizQuestionsInputSchema},
-  output: {schema: GenerateQuizQuestionsOutputSchema},
+  input: { schema: GenerateQuizQuestionsInputSchema },
+  output: { schema: GenerateQuizQuestionsOutputSchema },
   prompt: `You are an expert educator creating quizzes to test understanding of course content.
 
   Based on the following text content, generate 3-5 quiz questions with one correct answer and a short explanation for each answer.
@@ -62,16 +67,16 @@ const generateQuizQuestionsPrompt = ai.definePrompt({
   `,
 });
 
-const generateQuizQuestionsFlow = ai.defineFlow(
+export const generateQuizQuestionsFlow = ai.defineFlow(
   {
-    name: 'generateQuizQuestionsFlow',
+    name: "generateQuizQuestionsFlow",
     inputSchema: GenerateQuizQuestionsInputSchema,
     outputSchema: GenerateQuizQuestionsOutputSchema,
   },
   async (input) => {
-    const {output} = await generateQuizQuestionsPrompt(input);
+    const { output } = await generateQuizQuestionsPrompt(input);
     if (!output) {
-      throw new Error('The AI failed to generate quiz questions.');
+      throw new Error("The AI failed to generate quiz questions.");
     }
     return output;
   }

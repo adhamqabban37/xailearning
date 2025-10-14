@@ -1,40 +1,45 @@
-
-import type { AnalyzeDocumentOutput } from '@/ai/flows/schemas';
+import type { AnalyzeDocumentOutput } from "@/ai/flows/schemas";
 
 export type CourseAnalysis = AnalyzeDocumentOutput;
 
 // Extract the lesson and resource types from the new schema
-type Module = AnalyzeDocumentOutput['modules'][0];
-type LessonSchema = Module['lessons'][0];
+type Module = AnalyzeDocumentOutput["modules"][number];
+type LessonSchema = Module["lessons"][number];
 
 // A generic resource type for the client, combining all possible fields
-type ResourceSchema = (
-    (NonNullable<LessonSchema['resources']>['youtube'][0] & { type: 'video' }) |
-    (NonNullable<LessonSchema['resources']>['articles'][0] & { type: 'article' }) |
-    (NonNullable<LessonSchema['resources']>['pdfs_docs'][0] & { type: 'docs' })
-)
-
+type ResourceSchema =
+  | (NonNullable<NonNullable<LessonSchema["resources"]>["youtube"]>[number] & {
+      type: "video";
+    })
+  | (NonNullable<NonNullable<LessonSchema["resources"]>["articles"]>[number] & {
+      type: "article";
+    })
+  | (NonNullable<
+      NonNullable<LessonSchema["resources"]>["pdfs_docs"]
+    >[number] & {
+      type: "docs";
+    });
 
 // Augmented types with client-side IDs and more details for the interactive phase
-export type Lesson = Omit<LessonSchema, 'resources' | 'quiz'> & { 
+export type Lesson = Omit<LessonSchema, "resources" | "quiz"> & {
   id: string;
   content_summary: string; // The full summary text for the lesson
   content_snippet: string; // A short snippet for previews
   resources?: ResourceSchema[];
-  quiz?: { 
-    question: string; 
-    answer: string; 
+  quiz?: {
+    question: string;
+    answer: string;
     options?: string[];
-    explanation?: string; 
+    explanation?: string;
   }[];
   timeEstimateMinutes?: number;
 };
 
-export type Session = { 
-  id: string; 
+export type Session = {
+  id: string;
   session_title: string; // Renamed from module_title
-  lessons: Lesson[]; 
-  estimated_time?: string; 
+  lessons: Lesson[];
+  estimated_time?: string;
 };
 
 // This is the final course object used by the learning interface
@@ -49,13 +54,13 @@ export type Course = {
 };
 
 // Extracted for convenience
-export type Resource = NonNullable<Lesson['resources']>[0];
-export type QuizQuestion = NonNullable<Lesson['quiz']>[0];
+export type Resource = NonNullable<Lesson["resources"]>[0];
+export type QuizQuestion = NonNullable<Lesson["quiz"]>[0];
 
 // Storage types
 export type StoredCourse = {
   course: Course;
-  progress: Record<string, 'completed'>; // Key is lesson.id
+  progress: Record<string, "completed">; // Key is lesson.id
   createdAt: string;
 };
 

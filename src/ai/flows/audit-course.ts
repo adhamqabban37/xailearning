@@ -1,5 +1,4 @@
-
-'use server';
+"use server";
 
 /**
  * @fileOverview This file defines a Genkit flow to audit and evaluate a course structure.
@@ -12,30 +11,47 @@
  * @fileExport AuditCourseOutput - The return type for the auditCourse function.
  */
 
-import {ai, geminiPro, generationConfig} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai, geminiPro, generationConfig } from "@/ai/genkit";
+import { z } from "genkit";
 
 const AuditCourseInputSchema = z.object({
-  courseContent: z.string().describe('The full course content in JSON, PDF, or raw text format.'),
+  courseContent: z
+    .string()
+    .describe("The full course content in JSON, PDF, or raw text format."),
 });
 export type AuditCourseInput = z.infer<typeof AuditCourseInputSchema>;
 
 const AuditCourseOutputSchema = z.object({
   summary: z.object({
-    total_modules: z.number().describe('Total number of modules found.'),
-    total_lessons: z.number().describe('Total number of lessons found.'),
-    lessons_missing_titles: z.array(z.string()).describe('List of lessons or IDs with missing titles.'),
-    lessons_missing_key_points: z.array(z.string()).describe('List of lessons missing key points.'),
-    lessons_missing_quizzes: z.array(z.string()).describe('List of lessons missing quizzes.'),
-    lessons_missing_resources: z.array(z.string()).describe('List of lessons missing external resources.'),
-    lessons_missing_time_estimates: z.array(z.string()).describe('List of lessons missing time estimates.'),
-    broken_links: z.array(z.string()).describe('List of identified broken or invalid URLs.'),
-    lesson_order_issues: z.array(z.string()).describe('List of lessons that seem out of logical order.'),
+    total_modules: z.number().describe("Total number of modules found."),
+    total_lessons: z.number().describe("Total number of lessons found."),
+    lessons_missing_titles: z
+      .array(z.string())
+      .describe("List of lessons or IDs with missing titles."),
+    lessons_missing_key_points: z
+      .array(z.string())
+      .describe("List of lessons missing key points."),
+    lessons_missing_quizzes: z
+      .array(z.string())
+      .describe("List of lessons missing quizzes."),
+    lessons_missing_resources: z
+      .array(z.string())
+      .describe("List of lessons missing external resources."),
+    lessons_missing_time_estimates: z
+      .array(z.string())
+      .describe("List of lessons missing time estimates."),
+    broken_links: z
+      .array(z.string())
+      .describe("List of identified broken or invalid URLs."),
+    lesson_order_issues: z
+      .array(z.string())
+      .describe("List of lessons that seem out of logical order."),
   }),
-  recommendations: z.array(z.string()).describe('A list of actionable recommendations for improvement.'),
+  recommendations: z
+    .array(z.string())
+    .describe("A list of actionable recommendations for improvement."),
 });
 export type AuditCourseOutput = z.infer<typeof AuditCourseOutputSchema>;
-
 
 export async function auditCourse(
   input: AuditCourseInput
@@ -44,11 +60,11 @@ export async function auditCourse(
 }
 
 const auditCoursePrompt = ai.definePrompt({
-  name: 'auditCoursePrompt',
+  name: "auditCoursePrompt",
   model: geminiPro,
   config: generationConfig,
-  input: {schema: AuditCourseInputSchema},
-  output: {schema: AuditCourseOutputSchema},
+  input: { schema: AuditCourseInputSchema },
+  output: { schema: AuditCourseOutputSchema },
   prompt: `You are an expert AI instructional designer, course evaluator, and AI content auditor.
 Your task is to analyze a complete course provided in JSON, PDF, or text format and report what is working, what is missing, and what needs improvement.
 
@@ -89,16 +105,16 @@ Input:
 `,
 });
 
-const auditCourseFlow = ai.defineFlow(
+export const auditCourseFlow = ai.defineFlow(
   {
-    name: 'auditCourseFlow',
+    name: "auditCourseFlow",
     inputSchema: AuditCourseInputSchema,
     outputSchema: AuditCourseOutputSchema,
   },
   async (input) => {
-    const {output} = await auditCoursePrompt(input);
+    const { output } = await auditCoursePrompt(input);
     if (!output) {
-      throw new Error('The AI failed to generate an audit report.');
+      throw new Error("The AI failed to generate an audit report.");
     }
     return output;
   }
