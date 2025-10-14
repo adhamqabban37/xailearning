@@ -28,11 +28,17 @@ const GenerateQuizQuestionsOutputSchema = z.object({
     .array(
       z.object({
         question: z.string().describe("The quiz question."),
+        type: z
+          .literal("MCQ")
+          .describe("The type of quiz question - always MCQ."),
+        options: z
+          .array(z.string())
+          .describe("Array of 4 answer choices (3 distractors + 1 correct)."),
         answer: z.string().describe("The correct answer to the question."),
         explanation: z.string().describe("Explanation of the answer."),
       })
     )
-    .describe("The generated quiz questions."),
+    .describe("The generated multiple-choice quiz questions."),
 });
 
 export type GenerateQuizQuestionsOutput = z.infer<
@@ -51,19 +57,26 @@ const generateQuizQuestionsPrompt = ai.definePrompt({
   config: generationConfig,
   input: { schema: GenerateQuizQuestionsInputSchema },
   output: { schema: GenerateQuizQuestionsOutputSchema },
-  prompt: `You are an expert educator creating quizzes to test understanding of course content.
+  prompt: `You are an expert educator creating multiple-choice quizzes to test understanding of course content.
 
-  Based on the following text content, generate 3-5 quiz questions with one correct answer and a short explanation for each answer.
-  Make sure the questions test understanding of the key concepts in the text.
+  Based on the following text content, generate 3-5 multiple-choice quiz questions. Each question MUST have:
+  - One correct answer
+  - 3 plausible distractors (incorrect but reasonable options)
+  - A brief explanation of why the correct answer is right
+  - All options should be clearly related to the lesson content
 
   Text Content: {{{textContent}}}
 
-  Format the questions as a JSON array of objects with the following structure:
+  Format the questions as a JSON array with this EXACT structure:
   [{
     "question": "The quiz question.",
-    "answer": "The correct answer to the question.",
-    "explanation": "Explanation of the answer."
+    "type": "MCQ",
+    "options": ["Option A", "Option B", "Option C", "Option D"],
+    "answer": "Option B",
+    "explanation": "Brief explanation of why this is correct."
   }]
+
+  Make sure the "answer" field exactly matches one of the items in the "options" array.
   `,
 });
 

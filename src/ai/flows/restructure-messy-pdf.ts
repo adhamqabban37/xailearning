@@ -51,7 +51,12 @@ Show dependencies between lessons explicitly if you detect them.
 
 Interactivity:
 
-Include short quizzes (3–5 questions per lesson) to check understanding.
+Include short multiple-choice quizzes (3–5 questions per lesson) to check understanding.
+Each quiz question MUST have:
+- One correct answer
+- 3-4 plausible distractors (incorrect but reasonable options)
+- The "type" field set to "MCQ"
+- All options clearly related to the lesson content
 Include mini-projects, exercises, or prompts for active learning in each module.
 Suggest discussion prompts or reflection tasks where appropriate.
 
