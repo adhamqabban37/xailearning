@@ -38,44 +38,25 @@ const analyzeDocumentPrompt = ai.definePrompt({
   config: generationConfig,
   input: { schema: AnalyzeDocumentInputSchema },
   output: { schema: AnalyzeDocumentOutputSchema },
-  prompt: `You are an expert AI instructional designer, course architect, and content curator.
-Your task is to generate a complete, interactive, and engaging course from the provided text content.
+  prompt: `You are an expert AI instructional designer. Generate a structured course from the provided text.
 
-Requirements:
+REQUIREMENTS:
+1. Create 2-4 modules, each with 2-4 lessons
+2. Each lesson must have: title, 3-5 key points, 1-3 MCQs with 4 options each, external resources
+3. Organize from basic to advanced concepts
+4. Keep responses concise and focused
 
-Lesson Sequencing:
+QUIZ FORMAT:
+- One correct answer + 3 plausible distractors
+- Questions directly related to lesson content
+- Type: "MCQ"
 
-Organize the course from easiest concepts to most advanced.
-Reorder lessons if needed for logical progression.
-Show dependencies between lessons explicitly if you detect them.
+RESOURCES:
+- Include 1-2 relevant YouTube videos, articles, or docs per lesson
+- Use real, working URLs when possible
 
-Interactivity:
-
-Include short multiple-choice quizzes (3–5 questions per lesson) to check understanding.
-Each quiz question MUST have:
-- One correct answer
-- 3-4 plausible distractors (incorrect but reasonable options)
-- The "type" field set to "MCQ"
-- All options clearly related to the lesson content
-Include mini-projects, exercises, or prompts for active learning in each module.
-Suggest discussion prompts or reflection tasks where appropriate.
-
-External Resources:
-
-Include valid, working URLs for YouTube videos, articles, and documentation.
-Provide clickable links with clear titles. For videos, suggest relevant timestamps if possible.
-Ensure resources are high-quality, recent (2021+), and authoritative.
-
-Course Flow & Engagement:
-
-Each lesson should have a short hook to capture learner interest.
-Key points should be concise and actionable.
-Include estimated time per lesson for pacing guidance.
-
-Here is the text to analyze:
-
-{{{textContent}}}
-`,
+Content to analyze:
+{{{textContent}}}`,
 });
 
 export const analyzeDocumentFlow = ai.defineFlow(

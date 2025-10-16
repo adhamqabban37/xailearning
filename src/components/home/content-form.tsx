@@ -26,12 +26,15 @@ import {
   Clock,
 } from "lucide-react";
 import { generateCourseFromText } from "@/app/actions";
+import { saveCourse } from "@/lib/auth";
+import { useAuth } from "@/components/auth/AuthProvider";
 import type { Course } from "@/lib/types";
 import { Card } from "../ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { promptTemplate } from "@/lib/prompt-template";
 import { RadioGroup, RadioGroupItem } from "../ui/radio-group";
 import { Label } from "../ui/label";
+import { LoadingBar } from "../ui/loading-bar";
 
 const formSchema = z.object({
   topic: z.string().optional(),
@@ -55,7 +58,10 @@ export function ContentForm({
   const [fileName, setFileName] = useState<string | null>(null);
   const [isPasting, setIsPasting] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [processingStep, setProcessingStep] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -88,6 +94,26 @@ export function ContentForm({
     });
   };
 
+  const handleCourseGenerated = async (course: Course) => {
+    // Save course for authenticated users using client-side Supabase session (RLS)
+    if (user) {
+      try {
+        const id = await saveCourse(user.id, course);
+        if (typeof id === "string") {
+          toast({
+            title: "Course Saved!",
+            description: "Your course has been saved to your dashboard.",
+          });
+        }
+      } catch (error) {
+        console.error("Error saving course:", error);
+      }
+    }
+
+    // Always call the original handler
+    onCourseGenerated(course);
+  };
+
   async function onTextSubmit() {
     const values = form.getValues();
     if (!values.text || values.text.length < 100) {
@@ -105,7 +131,7 @@ export function ContentForm({
     if (result && "error" in result) {
       setError(result.error);
     } else if (result) {
-      onCourseGenerated(result);
+      await handleCourseGenerated(result);
     }
   }
 
@@ -127,18 +153,25 @@ export function ContentForm({
 
     setIsLoading(true);
     setError(null);
+    setUploadProgress(0);
+    setProcessingStep("Reading PDF...");
 
     // Step 1: Parse PDF via API route (fast)
     try {
+      setUploadProgress(10);
       const formData = new FormData();
       formData.append("file", file);
       const controller = new AbortController();
       const to = setTimeout(() => controller.abort(), 25_000);
+
+      setUploadProgress(25);
       const res = await fetch("/api/upload", {
         method: "POST",
         body: formData,
         signal: controller.signal,
       }).finally(() => clearTimeout(to));
+
+      setUploadProgress(40);
       if (!res.ok) {
         let msg = `Failed to upload/parse PDF (status ${res.status}).`;
         try {
@@ -154,23 +187,38 @@ export function ContentForm({
           "The PDF content is too short or could not be extracted. Please try a different PDF."
         );
       }
+
+      setUploadProgress(50);
+      setProcessingStep("Generating course with AI...");
+
       // Step 2: Cap long text and call AI
-      const MAX_CHARS = 16000;
+      const MAX_CHARS = 12000; // Reduced for faster processing
       if (text.length > MAX_CHARS) text = text.slice(0, MAX_CHARS);
+
+      setUploadProgress(70);
       const result = await generateCourseFromText(
         text,
         form.getValues("duration")
       );
+
+      setUploadProgress(90);
       if (result && "error" in result) {
         setError(result.error);
       } else if (result) {
-        onCourseGenerated(result);
+        await handleCourseGenerated(result);
+        setUploadProgress(100);
+        setProcessingStep("Course generated successfully!");
+        // Brief delay to show completion
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
     } catch (e: any) {
       setError(e?.message || "There was an error processing your PDF.");
+      setUploadProgress(0);
     }
 
     setIsLoading(false);
+    setProcessingStep(null);
+    setUploadProgress(0);
     setFileName(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -204,14 +252,24 @@ export function ContentForm({
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto bg-card/50 border-primary/20 shadow-primary/10 shadow-lg p-6 rounded-xl">
+    <Card className="w-full max-w-4xl mx-auto bg-card/80 border-accent/30 circuit-bg glow-subtle p-6 md:p-8 rounded-xl relative overflow-hidden elevation-2">
+      {isLoading && (
+        <div className="mb-6">
+          <LoadingBar
+            progress={uploadProgress}
+            status={processingStep || "Processing..."}
+            visible={isLoading}
+            variant="inline"
+          />
+        </div>
+      )}
       <Form {...form}>
         <div className="space-y-6">
-          <div className="text-center">
-            <h3 className="text-2xl font-bold flex items-center justify-center gap-2">
-              <Wand2 className="text-primary" /> Craft with a prompt
+          <div className="text-center space-y-2">
+            <h3 className="text-2xl md:text-3xl font-bold flex items-center justify-center gap-2 font-headline">
+              <Wand2 className="text-primary h-6 w-6" /> Craft with a prompt
             </h3>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground text-base">
               Generate course material with this powerful prompt, then bring it
               back here.
             </p>
@@ -282,10 +340,10 @@ export function ContentForm({
 
               <Button
                 onClick={handleCopyToClipboard}
-                className="w-full"
+                className="w-full btn-gradient shadow-md hover:shadow-lg transition-all"
                 size="lg"
               >
-                <Copy />
+                <Copy className="mr-2 h-4 w-4" />
                 Copy Prompt
               </Button>
             </div>
@@ -316,7 +374,7 @@ export function ContentForm({
                 <UploadCloud className="mx-auto h-8 w-8 text-primary" />
                 <p className="mt-2 font-semibold text-foreground">
                   {isLoading
-                    ? "Processing..."
+                    ? processingStep || "Processing..."
                     : fileName ||
                       (isDraggingOver
                         ? "Drop the PDF here!"
@@ -369,10 +427,11 @@ export function ContentForm({
                             onClick={onTextSubmit}
                             disabled={isLoading}
                             size="sm"
+                            className="btn-gradient shadow-md hover:shadow-lg transition-all"
                           >
                             {isLoading ? (
                               <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />{" "}
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 Analyzing...
                               </>
                             ) : (

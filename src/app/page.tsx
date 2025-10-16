@@ -18,6 +18,7 @@ export default function Home() {
     clearCourse,
     isLoading: storageIsLoading,
   } = useCourseStorage();
+  const showLoadingBar = isLoading || storageIsLoading;
   const router = useRouter();
 
   const handleResume = () => {
@@ -56,31 +57,33 @@ export default function Home() {
       : 0;
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center my-8 p-8 bg-card border rounded-lg shadow-lg max-w-2xl mx-auto border-primary/20 shadow-primary/10">
-          <div className="mx-auto bg-primary/10 rounded-full p-4 w-fit mb-6">
-            <BookOpenCheck className="text-primary h-8 w-8" />
+        <div className="text-center my-8 p-12 bg-card border rounded-xl elevation-2 max-w-2xl mx-auto border-primary/20">
+          <div className="mx-auto bg-primary/10 rounded-full p-6 w-fit mb-6">
+            <BookOpenCheck className="text-primary h-10 w-10" />
           </div>
-          <h2 className="text-3xl font-bold mb-2">Welcome Back!</h2>
-          <p className="text-muted-foreground mb-6 text-lg">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 font-headline">
+            Welcome Back!
+          </h2>
+          <p className="text-muted-foreground mb-8 text-lg">
             You have a course in progress. Ready to dive back in?
           </p>
 
           {totalSteps > 0 && (
             <>
-              <div className="w-full bg-secondary rounded-full h-2.5 mb-6">
+              <div className="w-full bg-muted/20 rounded-full h-3 mb-4 overflow-hidden">
                 <div
-                  className="bg-primary h-2.5 rounded-full"
+                  className="bg-gradient-to-r from-primary to-accent h-3 rounded-full transition-all duration-500"
                   style={{ width: `${(completedSteps / totalSteps) * 100}%` }}
                 ></div>
               </div>
-              <p className="text-sm text-muted-foreground mb-6">
+              <p className="text-sm text-muted-foreground mb-8">
                 {completedSteps} of {totalSteps} lessons completed
               </p>
             </>
           )}
 
-          <div className="flex justify-center gap-4">
-            <Button onClick={handleResume} size="lg">
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <Button onClick={handleResume} size="lg" className="btn-gradient">
               Resume Learning
             </Button>
             <Button onClick={handleStartOver} variant="outline" size="lg">
@@ -94,18 +97,32 @@ export default function Home() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <section className="relative text-center my-8 md:my-16 p-8 rounded-xl overflow-hidden">
-        <div className="absolute inset-0 w-full h-full bg-grid-cyan-500/10 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]"></div>
-        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background to-transparent"></div>
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-background to-transparent"></div>
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4 bg-gradient-to-b from-foreground to-foreground/70 text-transparent bg-clip-text">
-          Turn Any Document into an Adventure
-        </h1>
-        <p className="max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground">
-          Upload a PDF, paste text, or provide a link. Our AI will analyze your
-          content and build a personalized, interactive course for you in
-          seconds.
-        </p>
+      <section className="relative text-center my-8 md:my-16 p-12 rounded-xl overflow-hidden circuit-bg border border-accent/20 elevation-2">
+        <div className="circuit-lines"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent"></div>
+        <div className="relative z-10">
+          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 text-gradient font-headline">
+            Turn Any Document into an Adventure
+          </h1>
+          <p className="max-w-3xl mx-auto text-lg md:text-xl text-muted-foreground mb-8">
+            Upload a PDF, paste text, or provide a link. Our AI will analyze
+            your content and build a personalized, interactive course for you in
+            seconds.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button className="btn-gradient px-8 py-3 rounded-lg font-semibold shadow-md hover:shadow-lg transition-all">
+              Get Started
+            </button>
+            <a
+              href="https://youtu.be/WadeMfgr_hA"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-8 py-3 rounded-lg border-2 border-accent/30 text-accent hover:bg-accent/10 hover:border-accent/50 transition-all duration-300 font-semibold text-center flex items-center justify-center"
+            >
+              How it works
+            </a>
+          </div>
+        </div>
       </section>
 
       <section className="mb-16">

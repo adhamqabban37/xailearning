@@ -1,15 +1,30 @@
 import { cn } from "@/lib/utils";
-import { GraduationCap } from "lucide-react";
+import Image from "next/image";
 
-export function Logo({ className }: { className?: string }) {
+type LogoProps = {
+  className?: string;
+  alt?: string;
+};
+
+export function Logo({ className, alt }: LogoProps) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <div className="bg-primary/10 text-primary rounded-lg p-2">
-        <GraduationCap className="h-6 w-6" />
+      <div className="relative">
+        <Image
+          src="/logo.jpg"
+          alt={alt ?? "AI Course Crafter Logo"}
+          width={40}
+          height={40}
+          className="w-10 h-10 rounded-md object-cover"
+          priority
+        />
       </div>
-      <span className="text-xl font-bold text-foreground">
-        Course Crafter
-      </span>
+      <div className="flex flex-col leading-tight">
+        <span className="text-lg font-bold text-foreground">AI Learn</span>
+        <span className="text-xs text-muted-foreground font-medium">
+          AI Course Crafter
+        </span>
+      </div>
     </div>
   );
 }

@@ -4,6 +4,12 @@ import { analyzeDocument } from "@/ai/flows/restructure-messy-pdf";
 import { auditCourse } from "@/ai/flows/audit-course";
 import type { Course, CourseAnalysis } from "@/lib/types";
 
+/**
+ * Transform AI analysis output into the UI `Course` shape.
+ * - Flattens and sums time estimates for `total_estimated_time`.
+ * - Normalizes resource categories and quiz items.
+ * - Generates stable IDs based on indexes.
+ */
 function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
   const allLessons = (analysis.modules || []).flatMap((m) => m.lessons || []);
   const totalTime = allLessons.reduce(
@@ -69,16 +75,27 @@ export async function generateCourseFromText(
     };
   }
   // Cap very large inputs to keep latency/cost in check
-  const MAX_CHARS = 16000;
+  const MAX_CHARS = 12000; // Reduced from 16000 for faster processing
   const safeText =
     trimmed.length > MAX_CHARS ? trimmed.slice(0, MAX_CHARS) : trimmed;
 
   try {
     console.log("Starting course generation from text...");
-    const analysis = await analyzeDocument({
+
+    // Add timeout wrapper for AI processing
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(
+        () => reject(new Error("Course generation timed out after 60 seconds")),
+        60000
+      );
+    });
+
+    const analysisPromise = analyzeDocument({
       textContent: safeText,
       duration: duration,
     });
+
+    const analysis = await Promise.race([analysisPromise, timeoutPromise]);
 
     if (!analysis || !analysis.modules || analysis.modules.length === 0) {
       return {
@@ -89,6 +106,7 @@ export async function generateCourseFromText(
 
     const course = transformAnalysisToCourse(analysis);
 
+    // Run audit in background without blocking
     auditCourse({ courseContent: JSON.stringify(analysis, null, 2) })
       .then((report) =>
         console.log("Course Audit Report:", JSON.stringify(report, null, 2))

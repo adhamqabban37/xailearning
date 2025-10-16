@@ -27,6 +27,9 @@ export const generationConfig: GeminiConfig = {
       threshold: "BLOCK_NONE",
     },
   ],
+  // Add timeout and performance optimizations
+  maxOutputTokens: 8192,
+  temperature: 0.3,
 };
 
 export const ai = genkit({

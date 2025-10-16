@@ -1,4 +1,3 @@
-
 {
   "compilerOptions": {
     "target": "ES2017",
@@ -22,8 +21,23 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["node", "@types/pdf-parse", "@types/multer"]
+    "types": ["node", "jest", "@types/pdf-parse", "@types/multer"]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "pages/api/upload.ts"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "pages/api/upload.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "cypress",
+    "cypress.config.ts",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.cy.ts",
+    "**/*.cy.tsx",
+    "firestore.test.ts"
+  ]
 }
