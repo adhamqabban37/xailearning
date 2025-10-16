@@ -1,21 +1,13 @@
-# Render deployment configuration for AI Course Crafter
-# https://render.com/docs/yaml-spec
-
 services:
   - type: web
-    name: ai-course-crafter
+    name: xailearning
     env: node
-    plan: free # Change to 'starter' for paid tier ($7/month)
+    region: oregon
+    plan: free
     buildCommand: npm install && npm run build
     startCommand: npm run start
-    healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
-      # Add these in Render Dashboard as they contain sensitive data:
-      # - NEXT_PUBLIC_SUPABASE_URL
-      # - NEXT_PUBLIC_SUPABASE_ANON_KEY
-      # - SUPABASE_SERVICE_ROLE_KEY
-      # - GOOGLE_GENKIT_API_KEY
