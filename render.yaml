@@ -3,5 +3,6 @@ services:
     name: xailearning
     env: node
     buildCommand: npm install && npm run build
-    startCommand: npm start
+    # Bind Next.js to Render-provided $PORT to avoid port conflicts
+    startCommand: npx next start -p $PORT
     # rootDir: Ai-learn-  <-- REMOVE or comment this line!
