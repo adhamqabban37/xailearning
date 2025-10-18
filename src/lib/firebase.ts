@@ -1,6 +1,10 @@
 import { initializeApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
-import { getFirestore, enableIndexedDbPersistence, type Firestore } from "firebase/firestore";
+import {
+  getFirestore,
+  enableIndexedDbPersistence,
+  type Firestore,
+} from "firebase/firestore";
 
 // Only initialize Firebase on the client. Avoid throwing at import time so
 // server/edge builds (like Render) don't fail if env vars are missing.
@@ -51,7 +55,11 @@ if (isBrowser) {
               "[Firebase] Offline persistence not available in this browser."
             );
           } else {
-            console.error("[Firebase] Unexpected persistence error:", code, err);
+            console.error(
+              "[Firebase] Unexpected persistence error:",
+              code,
+              err
+            );
           }
         });
     } catch (e) {
