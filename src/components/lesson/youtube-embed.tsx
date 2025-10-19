@@ -1,10 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Loader2, ExternalLink, AlertCircle } from "lucide-react";
 
-type EmbedStatus = "unknown" | "ok" | "blocked";
+type EmbedStatus = "loading" | "ok" | "blocked" | "invalid";
+type VideoMetadata = {
+  title?: string;
+  author?: string;
+  thumbnail?: string;
+};
 
 function extractYouTubeId(rawUrl: string): string | null {
+  // Early validation - check if URL is valid and not empty
+  if (!rawUrl || typeof rawUrl !== "string" || rawUrl.trim() === "") {
+    console.warn("❌ Empty or invalid URL provided to YouTubeEmbed");
+    return null;
+  }
+
   try {
     const url = new URL(rawUrl);
     const host = url.hostname.replace(/^www\./, "");
@@ -48,45 +60,91 @@ function extractYouTubeId(rawUrl: string): string | null {
 
 export function YouTubeEmbed({ url }: { url: string }) {
   const videoId = useMemo(() => extractYouTubeId(url), [url]);
-  const [status, setStatus] = useState<EmbedStatus>("unknown");
+  const [status, setStatus] = useState<EmbedStatus>("loading");
+  const [metadata, setMetadata] = useState<VideoMetadata | null>(null);
+  const [showEmbed, setShowEmbed] = useState(false);
+
+  // Generate thumbnail URLs (YouTube provides multiple resolutions)
+  const thumbnailUrl = videoId
+    ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`
+    : null;
+  const fallbackThumbnail = videoId
+    ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+    : null;
 
   useEffect(() => {
     let cancelled = false;
-    async function checkEmbeddable() {
+
+    async function validateVideo() {
       if (!videoId) {
-        setStatus("blocked");
+        console.warn("❌ Invalid YouTube URL:", url);
+        setStatus("invalid");
         return;
       }
+
+      console.log("✅ Extracted YouTube video ID:", videoId, "from:", url);
+
       try {
+        // Check if video exists and is embeddable via oEmbed
         const res = await fetch(
           `/api/youtube-oembed?url=${encodeURIComponent(url)}`
         );
-        if (!cancelled) {
-          setStatus(res.ok ? "ok" : "blocked");
+
+        if (cancelled) return;
+
+        if (res.ok) {
+          const data = await res.json();
+          console.log(`📹 Video ${videoId} is valid and embeddable`);
+
+          setMetadata({
+            title: data.title,
+            author: data.author_name,
+            thumbnail: data.thumbnail_url,
+          });
+          setStatus("ok");
+        } else {
+          console.warn(`⚠️ Video ${videoId} not embeddable or not found`);
+          setStatus("blocked");
         }
-      } catch {
-        if (!cancelled) setStatus("ok"); // be permissive on network hiccups
+      } catch (err) {
+        console.warn("⚠️ oEmbed validation failed for:", videoId, err);
+        if (!cancelled) {
+          // On network error, still try to show embed with thumbnail
+          setStatus("ok");
+        }
       }
     }
-    checkEmbeddable();
+
+    validateVideo();
     return () => {
       cancelled = true;
     };
   }, [url, videoId]);
 
-  // If invalid or explicitly blocked, show a safe link fallback
-  if (!videoId || status === "blocked") {
+  // If invalid or blocked, render nothing
+  if (!videoId || status === "invalid" || status === "blocked") {
+    return null;
+  }
+
+  // Loading state with thumbnail
+  if (status === "loading") {
     return (
-      <div className="aspect-video w-full flex items-center justify-center rounded-lg bg-secondary/30 p-4">
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-primary underline"
-          aria-label="Open video on YouTube in a new tab"
-        >
-          Open this video on YouTube
-        </a>
+      <div className="aspect-video w-full rounded-lg overflow-hidden bg-secondary/30 relative">
+        {thumbnailUrl && (
+          <img
+            src={thumbnailUrl}
+            alt="Loading video..."
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              if (fallbackThumbnail) {
+                (e.target as HTMLImageElement).src = fallbackThumbnail;
+              }
+            }}
+          />
+        )}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+          <Loader2 className="w-8 h-8 text-white animate-spin" />
+        </div>
       </div>
     );
   }
@@ -95,18 +153,63 @@ export function YouTubeEmbed({ url }: { url: string }) {
     rel: "0",
     modestbranding: "1",
     playsinline: "1",
-    // origin is added at runtime for better compatibility with some embeds
   });
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   if (origin) params.set("origin", origin);
 
+  // Show thumbnail initially, load iframe on click for better performance
+  if (!showEmbed) {
+    return (
+      <div
+        className="aspect-video w-full rounded-lg overflow-hidden cursor-pointer group relative"
+        onClick={() => setShowEmbed(true)}
+      >
+        <img
+          src={thumbnailUrl || fallbackThumbnail || ""}
+          alt={metadata?.title || "YouTube video"}
+          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+          onError={(e) => {
+            if (
+              fallbackThumbnail &&
+              (e.target as HTMLImageElement).src !== fallbackThumbnail
+            ) {
+              (e.target as HTMLImageElement).src = fallbackThumbnail;
+            }
+          }}
+        />
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+          {/* YouTube play button */}
+          <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center group-hover:bg-red-700 transition-colors">
+            <svg
+              className="w-8 h-8 text-white ml-1"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
+        {metadata?.title && (
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
+            <p className="text-white text-sm font-medium line-clamp-2">
+              {metadata.title}
+            </p>
+            {metadata.author && (
+              <p className="text-white/70 text-xs mt-1">{metadata.author}</p>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className="aspect-video w-full">
+    <div className="aspect-video w-full rounded-lg overflow-hidden">
       <iframe
-        className="w-full h-full rounded-lg"
-        src={`https://www.youtube.com/embed/${videoId}?${params.toString()}`}
-        title="YouTube video player"
+        className="w-full h-full"
+        src={`https://www.youtube.com/embed/${videoId}?${params.toString()}&autoplay=1`}
+        title={metadata?.title || "YouTube video player"}
         referrerPolicy="origin-when-cross-origin"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowFullScreen

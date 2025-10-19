@@ -40,6 +40,27 @@ function transformAnalysisToCourse(analysis: CourseAnalysis): Course {
           })),
         ];
 
+        // Debug logging for resources
+        console.log(`📹 Lesson "${lesson.lesson_title}" resources:`, {
+          youtube: lesson.resources?.youtube?.length || 0,
+          articles: lesson.resources?.articles?.length || 0,
+          pdfs_docs: lesson.resources?.pdfs_docs?.length || 0,
+          total: resources.length,
+        });
+
+        // Log actual URLs for debugging
+        if (lesson.resources?.youtube && lesson.resources.youtube.length > 0) {
+          console.log(
+            `  YouTube URLs:`,
+            lesson.resources.youtube.map((v) => ({
+              title: v.title,
+              url: v.url,
+              hasUrl: !!v.url,
+              urlType: typeof v.url,
+            }))
+          );
+        }
+
         return {
           id: `session-${sIndex}-lesson-${lIndex}`,
           lesson_title: lesson.lesson_title,
@@ -82,11 +103,11 @@ export async function generateCourseFromText(
   try {
     console.log("Starting course generation from text...");
 
-    // Add timeout wrapper for AI processing
+    // Add timeout wrapper for AI processing (5 minutes for Ollama)
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(
-        () => reject(new Error("Course generation timed out after 60 seconds")),
-        60000
+        () => reject(new Error("Course generation timed out after 5 minutes")),
+        300000 // 5 minutes
       );
     });
 

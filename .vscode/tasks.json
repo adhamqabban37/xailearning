@@ -20,6 +20,17 @@
 				"$tsc"
 			],
 			"group": "test"
+		},
+		{
+			"label": "verify-gh-models",
+			"type": "shell",
+			"command": "node",
+			"args": [
+				"./scripts/verify-gh-models.mjs"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
 		}
 	]
 }

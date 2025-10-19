@@ -11,63 +11,29 @@
  * @fileExport SuggestMissingContentOutput - The return type for the suggestMissingContent function.
  */
 
-import { ai, geminiPro, generationConfig } from "@/ai/genkit";
-import { z } from "genkit";
+import { aiGenerateStream } from "@/lib/ai-provider";
 
-const SuggestMissingContentInputSchema = z.object({
-  courseContent: z
-    .string()
-    .describe("The course content in PDF or text format."),
-});
-export type SuggestMissingContentInput = z.infer<
-  typeof SuggestMissingContentInputSchema
->;
+export type SuggestMissingContentInput = {
+  courseContent: string;
+};
 
-const SuggestMissingContentOutputSchema = z.object({
-  missingItemsChecklist: z
-    .array(z.string())
-    .describe(
-      "A checklist of missing items in the course content with prompts to fill the gaps."
-    ),
-});
-export type SuggestMissingContentOutput = z.infer<
-  typeof SuggestMissingContentOutputSchema
->;
+export type SuggestMissingContentOutput = {
+  missingItemsChecklist: string[];
+};
 
 export async function suggestMissingContent(
   input: SuggestMissingContentInput
 ): Promise<SuggestMissingContentOutput> {
-  return suggestMissingContentFlow(input);
-}
-
-const suggestMissingContentPrompt = ai.definePrompt({
-  name: "suggestMissingContentPrompt",
-  model: geminiPro,
-  config: generationConfig,
-  input: { schema: SuggestMissingContentInputSchema },
-  output: { schema: SuggestMissingContentOutputSchema },
-  prompt: `You are an AI assistant designed to identify missing elements in course content and provide a checklist with prompts to the user to fill in the gaps.
-
-  Analyze the following course content:
-  {{{courseContent}}}
-
-  Identify any missing elements such as session titles, lesson steps, time estimates for each step, external resources (videos, links), and quiz questions per session.
-
-  Return a checklist of missing items with friendly prompts for the user to fill in the gaps. Be specific about what is missing and suggest how the user can add the information. Return your answer as a simple array of strings.
-  `,
-});
-
-export const suggestMissingContentFlow = ai.defineFlow(
-  {
-    name: "suggestMissingContentFlow",
-    inputSchema: SuggestMissingContentInputSchema,
-    outputSchema: SuggestMissingContentOutputSchema,
-  },
-  async (input) => {
-    const { output } = await suggestMissingContentPrompt(input);
-    if (!output) {
-      throw new Error("The AI failed to suggest missing content.");
-    }
-    return output;
+  const system =
+    "You are an AI assistant designed to identify missing elements in course content and provide a checklist with prompts to the user to fill in the gaps.";
+  const prompt = `Analyze the following course content and identify any missing elements such as session titles, lesson steps, time estimates for each step, external resources (videos, links), and quiz questions per session.\n\nReturn a checklist of missing items with friendly prompts for the user to fill in the gaps. Be specific about what is missing and suggest how the user can add the information. Return your answer as a simple array of strings.\n\nCourse Content:\n${input.courseContent}`;
+  let out = "";
+  for await (const chunk of aiGenerateStream(prompt, { system })) {
+    out += chunk;
   }
-);
+  // Try to extract the first array from the response
+  const match = out.match(/\[[\s\S]*?\]/);
+  if (!match)
+    throw new Error("DeepSeek did not return a valid checklist array.");
+  return { missingItemsChecklist: JSON.parse(match[0]) };
+}
