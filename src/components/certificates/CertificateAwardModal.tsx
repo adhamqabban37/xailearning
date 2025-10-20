@@ -17,6 +17,7 @@ interface CertificateAwardModalProps {
   courseId: string;
   onClose: () => void;
   visible: boolean;
+  shouldAward?: boolean;
 }
 
 export function CertificateAwardModal({
@@ -24,18 +25,14 @@ export function CertificateAwardModal({
   courseId,
   onClose,
   visible,
+  shouldAward,
 }: CertificateAwardModalProps) {
   const { user, userProfile } = useAuth();
   const { toast } = useToast();
   const [certificateId, setCertificateId] = useState<string>("");
   const [awarding, setAwarding] = useState(false);
 
-  useEffect(() => {
-    if (visible && user && userProfile) {
-      handleAwardCertificate();
-    }
-  }, [visible, user, userProfile]);
-
+  // Award certificate only when explicitly triggered
   const handleAwardCertificate = async () => {
     if (!user || !userProfile) return;
 

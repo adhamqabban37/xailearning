@@ -11,7 +11,7 @@ export function Logo({ className, alt }: LogoProps) {
     <div className={cn("flex items-center gap-2", className)}>
       <div className="relative">
         <Image
-          src="/logo.jpg"
+          src="/logo.svg"
           alt={alt ?? "AI Course Crafter Logo"}
           width={40}
           height={40}

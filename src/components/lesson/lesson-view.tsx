@@ -59,43 +59,43 @@ export function LessonView({ initialSession }: LessonViewProps) {
   const courseTitle = storedCourse?.course.course_title || session.title;
   const totalLessons = session.totalStepsInCourse;
 
-  // Temporarily disable Firebase integration to fix infinite loop
-  // const {
-  //   markLessonComplete,
-  //   isLessonCompleted,
-  //   getCourseCompletionStatus,
-  //   setCourseCompleteCallback,
-  // } = useUserProgress(courseId, courseTitle, totalLessons);
+  // Enable Supabase-backed progress tracking
+  const {
+    markLessonComplete,
+    isLessonCompleted,
+    getCourseCompletionStatus,
+    setCourseCompleteCallback,
+  } = useUserProgress(courseId, courseTitle, totalLessons);
 
-  // Compute counts first, then completion state
-  const completedCount = Object.values(completedSteps).filter(Boolean).length;
+  // Compute counts and completion state from Supabase
+  const { completedLessons, isCompleted: courseIsComplete } =
+    getCourseCompletionStatus();
   const totalStepsInSession = session.lessons.length;
+  const completedCount = completedLessons;
   const isSessionComplete = completedCount === totalStepsInSession;
 
-  const legacyIsCourseComplete =
-    session.completedStepsInCourse + completedCount >=
-    session.totalStepsInCourse;
-
   // Set up certificate awarding callback
+  const [shouldAwardCertificate, setShouldAwardCertificate] = useState(false);
   useEffect(() => {
-    if (legacyIsCourseComplete) {
-      setShowCertificateModal(true);
-    }
-  }, [legacyIsCourseComplete]);
+    setCourseCompleteCallback((data) => {
+      if (data.isCompleted) {
+        setShowCertificateModal(true);
+        setShouldAwardCertificate(true);
+      }
+    });
+  }, [setCourseCompleteCallback]);
 
   // state moved above
 
-  const isStepCompleted = (stepId: string) => !!completedSteps[stepId];
+  // Use Supabase-backed progress
+  const isStepCompleted = (stepId: string) => isLessonCompleted(stepId);
 
   const handleStepComplete = async (stepId: string, isChecked: boolean) => {
-    setCompletedSteps((prev) => ({ ...prev, [stepId]: isChecked }));
-
     if (isChecked) {
       // Update local course storage
       updateStepProgress(stepId, "completed");
-
-      // Firebase integration disabled temporarily
-      // await markLessonComplete(stepId, 100, 30); // Default score and time
+      // Persist to Supabase
+      await markLessonComplete(stepId, 100, 30); // Default score and time
     }
   };
 
@@ -178,7 +178,7 @@ export function LessonView({ initialSession }: LessonViewProps) {
               <CompletionCard
                 onNextSession={handleNextSession}
                 onFinish={handleFinish}
-                isCourseComplete={legacyIsCourseComplete}
+                isCourseComplete={courseIsComplete}
               />
             )}
           </div>
@@ -190,7 +190,11 @@ export function LessonView({ initialSession }: LessonViewProps) {
         courseTitle={courseTitle}
         courseId={courseId}
         visible={showCertificateModal}
-        onClose={() => setShowCertificateModal(false)}
+        onClose={() => {
+          setShowCertificateModal(false);
+          setShouldAwardCertificate(false);
+        }}
+        shouldAward={shouldAwardCertificate}
       />
     </ResizablePanelGroup>
   );

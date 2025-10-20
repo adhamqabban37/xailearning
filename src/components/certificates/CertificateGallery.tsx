@@ -8,24 +8,36 @@ import { Award } from "lucide-react";
 
 interface CertificateGalleryProps {
   userId: string;
+  certificates?: Certificate[];
 }
 
 export function CertificateGallery({ userId }: CertificateGalleryProps) {
-  const [certificates, setCertificates] = useState<Certificate[]>([]);
+  // If certificates are provided as a prop, use them; otherwise, fetch as before
+  const [internalCertificates, setInternalCertificates] = useState<
+    Certificate[]
+  >([]);
   const [loading, setLoading] = useState(true);
 
+  // Destructure certificates from props
+  // eslint-disable-next-line
+  const props = arguments[0] as CertificateGalleryProps;
+  const certificates = props.certificates;
+
   useEffect(() => {
-    if (userId) {
+    if (Array.isArray(certificates)) {
+      setInternalCertificates(certificates);
+      setLoading(false);
+    } else if (userId) {
       loadCertificates();
     }
-  }, [userId]);
+  }, [userId, certificates]);
 
   const loadCertificates = async () => {
     if (!userId) return;
-
+    setLoading(true);
     try {
       const userCertificates = await getUserCertificates(userId);
-      setCertificates(userCertificates);
+      setInternalCertificates(userCertificates);
     } catch (error) {
       console.error("Error loading certificates:", error);
     } finally {
@@ -55,11 +67,11 @@ export function CertificateGallery({ userId }: CertificateGalleryProps) {
         <Award className="h-6 w-6 text-yellow-500" />
         <h3 className="text-xl font-semibold">Your Certificates</h3>
         <span className="text-sm text-muted-foreground">
-          ({certificates.length})
+          ({internalCertificates.length})
         </span>
       </div>
 
-      {certificates.length === 0 ? (
+      {internalCertificates.length === 0 ? (
         <Card className="text-center p-8 circuit-bg border-accent/30">
           <CardContent>
             <Award className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -71,7 +83,7 @@ export function CertificateGallery({ userId }: CertificateGalleryProps) {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {certificates.map((certificate) => (
+          {internalCertificates.map((certificate) => (
             <CertificateCard key={certificate.id} certificate={certificate} />
           ))}
         </div>

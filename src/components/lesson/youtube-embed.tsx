@@ -121,8 +121,8 @@ export function YouTubeEmbed({ url }: { url: string }) {
     };
   }, [url, videoId]);
 
-  // If invalid or blocked, render nothing
-  if (!videoId || status === "invalid" || status === "blocked") {
+  // If truly invalid (bad ID), render nothing
+  if (!videoId || status === "invalid") {
     return null;
   }
 

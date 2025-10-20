@@ -22,6 +22,17 @@ export function ResourcesPanel({ resources }: { resources: Resource[] }) {
       console.warn("⚠️ Resource missing URL:", r);
       return false;
     }
+    // Filter out example.com and other placeholder domains
+    const url = r.url.toLowerCase();
+    if (
+      url.includes("example.com") ||
+      url.includes("placeholder.com") ||
+      url.includes("test.com") ||
+      url.includes("dummy.com")
+    ) {
+      console.warn("⚠️ Skipping placeholder resource:", r);
+      return false;
+    }
     return true;
   });
 

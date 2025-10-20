@@ -18,6 +18,7 @@ import { Clock, BookOpen, Trophy, Play, Award } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCourseStorage } from "@/hooks/use-course-storage";
 import { CertificateGallery } from "@/components/certificates/CertificateGallery";
+import { getUserCertificates, Certificate } from "@/lib/certificates";
 import type { Course } from "@/lib/types";
 
 export function Dashboard() {
@@ -25,24 +26,29 @@ export function Dashboard() {
   const [courses, setCourses] = useState<
     (SavedCourse & { courseId: string })[]
   >([]);
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { saveCourse } = useCourseStorage();
 
   useEffect(() => {
     if (user) {
-      loadCourses();
+      loadCoursesAndCertificates();
     }
   }, [user]);
 
-  const loadCourses = async () => {
+  const loadCoursesAndCertificates = async () => {
     if (!user) return;
 
     try {
-      const userCourses = await getUserCourses(user.id);
+      const [userCourses, userCertificates] = await Promise.all([
+        getUserCourses(user.id),
+        getUserCertificates(user.id),
+      ]);
       setCourses(userCourses);
+      setCertificates(userCertificates);
     } catch (error) {
-      console.error("Error loading courses:", error);
+      console.error("Error loading dashboard data:", error);
     } finally {
       setLoading(false);
     }
@@ -149,12 +155,7 @@ export function Dashboard() {
               <Award className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {
-                  courses.filter((course) => calculateProgress(course) === 100)
-                    .length
-                }
-              </div>
+              <div className="text-2xl font-bold">{certificates.length}</div>
             </CardContent>
           </Card>
         </div>
@@ -281,7 +282,12 @@ export function Dashboard() {
               </Badge>
             </div>
 
-            {user && <CertificateGallery userId={user.id} />}
+            {user && (
+              <CertificateGallery
+                userId={user.id}
+                certificates={certificates}
+              />
+            )}
           </TabsContent>
         </Tabs>
       </div>
