@@ -16,30 +16,41 @@ export default function LessonPage() {
     // Load course from sessionStorage
     const storedCourseData = sessionStorage.getItem("courseData");
     if (storedCourseData) {
-      const course = JSON.parse(storedCourseData);
-      setCourseData(course);
+      try {
+        const course = JSON.parse(storedCourseData);
+        setCourseData(course);
 
-      // Find the specific lesson
-      const moduleId = params.moduleId;
-      const lessonId = params.lessonId;
+        // Find the specific lesson
+        const moduleId = params.moduleId;
+        const lessonId = params.lessonId;
 
-      const module = course.modules?.find(
-        (m) => (m.id || m.moduleId) === moduleId
-      );
-      if (module) {
-        const foundLesson = module.lessons?.find(
-          (l) => (l.id || l.lessonId) === lessonId
+        const module = course.modules?.find(
+          (m) => (m.id || m.moduleId) === moduleId
         );
-        if (foundLesson) {
-          setLesson(foundLesson);
+        if (module) {
+          const foundLesson = module.lessons?.find(
+            (l) => (l.id || l.lessonId) === lessonId
+          );
+          if (foundLesson) {
+            setLesson(foundLesson);
+          }
         }
+      } catch (e) {
+        console.error("Failed to parse courseData from sessionStorage", e);
+        // Recover by clearing invalid data
+        sessionStorage.removeItem("courseData");
       }
     }
 
     // Load progress from localStorage
     const storedProgress = localStorage.getItem("courseProgress");
     if (storedProgress) {
-      setProgress(JSON.parse(storedProgress));
+      try {
+        setProgress(JSON.parse(storedProgress));
+      } catch (e) {
+        console.error("Failed to parse courseProgress; clearing", e);
+        localStorage.removeItem("courseProgress");
+      }
     }
   }, [params]);
 
@@ -87,6 +98,34 @@ export default function LessonPage() {
       </div>
     );
   }
+
+  // Build fallback resource collections from lesson.resources when resourcePack is absent
+  const buildResourceCollections = (l: any) => {
+    const pack = { youtube: [] as any[], articles: [] as any[] };
+    const items: any[] = Array.isArray(l?.resources) ? l.resources : [];
+    for (const item of items) {
+      if (!item) continue;
+      const isString = typeof item === "string";
+      const url = isString ? item : item.url;
+      const title = isString ? item : item.title || url;
+      if (!url) continue;
+      const isYouTube =
+        /(?:youtube\.com\/watch\?v=|youtube\.com\/embed\/|youtu\.be\/)\w+/i.test(
+          url
+        );
+      if (isYouTube) {
+        // respect embeddable flag if provided
+        const emb = isString ? true : item.embeddable !== false;
+        if (emb) pack.youtube.push({ title, url, duration: item?.duration });
+      } else {
+        pack.articles.push({ title, url });
+      }
+    }
+    return pack;
+  };
+
+  const effectiveResourcePack =
+    (lesson as any).resourcePack || buildResourceCollections(lesson);
 
   return (
     <>
@@ -164,9 +203,9 @@ export default function LessonPage() {
                 <h4 className="text-xl font-bold mb-4 text-blue-400">
                   Suggested Resources
                 </h4>
-                {lesson.resourcePack?.youtube && (
+                {effectiveResourcePack?.youtube && (
                   <ul className="space-y-4">
-                    {lesson.resourcePack.youtube.map((video, index) => (
+                    {effectiveResourcePack.youtube.map((video, index) => (
                       <li key={index} className="flex items-start space-x-3">
                         <svg
                           className="w-6 h-6 text-red-500 mt-1 flex-shrink-0"
@@ -188,17 +227,19 @@ export default function LessonPage() {
                           >
                             {video.title}
                           </a>
-                          <span className="text-gray-400 text-sm block">
-                            ({video.duration})
-                          </span>
+                          {video.duration && (
+                            <span className="text-gray-400 text-sm block">
+                              ({video.duration})
+                            </span>
+                          )}
                         </div>
                       </li>
                     ))}
                   </ul>
                 )}
-                {lesson.resourcePack?.articles && (
+                {effectiveResourcePack?.articles && (
                   <ul className="space-y-4 mt-4">
-                    {lesson.resourcePack.articles.map((article, index) => (
+                    {effectiveResourcePack.articles.map((article, index) => (
                       <li key={index} className="flex items-start space-x-3">
                         <svg
                           className="w-6 h-6 text-blue-400 mt-1 flex-shrink-0"

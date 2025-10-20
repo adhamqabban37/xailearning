@@ -2,7 +2,9 @@ import axios, { AxiosError, AxiosResponse } from "axios";
 import { Course, Module, Progress } from "../types/api";
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8001";
+  process.env.NEXT_PUBLIC_API_BASE ||
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:8002";
 
 // Enhanced error interface matching backend format
 export interface ApiError {
@@ -342,7 +344,7 @@ export const uploadApi = {
       // Enhanced error parsing for better user feedback
       if (error.code === "NETWORK_ERROR" || error.message === "Network Error") {
         throw new Error(
-          "Network error. Please check that the server is running on http://localhost:8000"
+          "Network error. Please check that the server is running on http://localhost:8002"
         );
       }
 

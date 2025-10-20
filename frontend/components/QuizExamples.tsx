@@ -1,89 +1,123 @@
-'use client'
+"use client";
 
-import React, { useState } from 'react'
-import { Book, Brain, Code, Trophy, RotateCcw } from 'lucide-react'
-import { Quiz } from '../components/Quiz'
-import { QuizProgress } from '../types/quiz'
-import { sampleQuizData, samplePythonQuiz, quizWithAssignment } from '../data/sampleQuizData'
+import React, { useState } from "react";
+import { Book, Brain, Code, Trophy, RotateCcw } from "lucide-react";
+import { Quiz } from "../components/Quiz";
+import { QuizProgress } from "../types/quiz";
+import type { QuizBlock } from "../types/quiz";
+const sampleQuizData: QuizBlock = {
+  questions: [
+    {
+      id: "q1",
+      type: "multiple_choice" as const,
+      question: "2 + 2 = ?",
+      options: ["3", "4", "5"],
+      answer: "4",
+      explanation: "Basic arithmetic",
+    },
+    {
+      id: "q2",
+      type: "short_answer" as const,
+      question: "Explain what an array is.",
+      key_points: ["collection", "index"],
+    },
+  ],
+};
+const samplePythonQuiz = sampleQuizData;
+const quizWithAssignment: QuizBlock & { assignment: any } = {
+  ...sampleQuizData,
+  assignment: {
+    title: "Mini Project",
+    description:
+      "Build a small program demonstrating concepts used in the quiz.",
+    requirements: ["Use arrays", "Include user input"],
+    rubric: { correctness: "Program runs and produces expected output" },
+  },
+};
 
 /**
  * Comprehensive example showing how to integrate Quiz components
  * into your course pages with different quiz types and configurations
  */
 export const QuizExamples: React.FC = () => {
-  const [activeQuiz, setActiveQuiz] = useState<string | null>(null)
-  const [completedQuizzes, setCompletedQuizzes] = useState<Record<string, QuizProgress>>({})
+  const [activeQuiz, setActiveQuiz] = useState<string | null>(null);
+  const [completedQuizzes, setCompletedQuizzes] = useState<
+    Record<string, QuizProgress>
+  >({});
 
   const handleQuizComplete = (quizId: string, progress: QuizProgress) => {
-    setCompletedQuizzes(prev => ({
+    setCompletedQuizzes((prev) => ({
       ...prev,
-      [quizId]: progress
-    }))
-    
+      [quizId]: progress,
+    }));
+
     // Here you would typically save to backend
-    console.log(`Quiz ${quizId} completed:`, progress)
-    
+    console.log(`Quiz ${quizId} completed:`, progress);
+
     // Show completion message
-    alert(`Quiz completed! Your score: ${progress.percentageScore}%`)
-  }
+    alert(`Quiz completed! Your score: ${progress.percentageScore}%`);
+  };
 
   const handleQuizProgress = (progress: QuizProgress) => {
     // Handle real-time progress updates
-    console.log('Quiz progress:', progress)
-    
+    console.log("Quiz progress:", progress);
+
     // You could save progress to backend here for resuming later
-  }
+  };
 
   const resetQuiz = (quizId: string) => {
-    setCompletedQuizzes(prev => {
-      const updated = { ...prev }
-      delete updated[quizId]
-      return updated
-    })
-  }
+    setCompletedQuizzes((prev) => {
+      const updated = { ...prev };
+      delete updated[quizId];
+      return updated;
+    });
+  };
 
   const quizzes = [
     {
-      id: 'react-fundamentals',
-      title: 'React Fundamentals Quiz',
-      description: 'Test your understanding of React concepts including hooks, components, and state management.',
+      id: "react-fundamentals",
+      title: "React Fundamentals Quiz",
+      description:
+        "Test your understanding of React concepts including hooks, components, and state management.",
       icon: <Brain className="h-6 w-6" />,
       data: sampleQuizData,
       timeLimit: 30, // 30 minutes
       config: {
         allowReview: true,
-        showExplanations: true
-      }
+        showExplanations: true,
+      },
     },
     {
-      id: 'python-basics',
-      title: 'Python Programming Quiz', 
-      description: 'Evaluate your Python programming skills with practical coding challenges.',
+      id: "python-basics",
+      title: "Python Programming Quiz",
+      description:
+        "Evaluate your Python programming skills with practical coding challenges.",
       icon: <Code className="h-6 w-6" />,
       data: samplePythonQuiz,
       timeLimit: 45,
       config: {
         allowReview: true,
-        showExplanations: true
-      }
+        showExplanations: true,
+      },
     },
     {
-      id: 'fullstack-project',
-      title: 'Full-Stack Project Assessment',
-      description: 'Complete a comprehensive project that demonstrates your full-stack development capabilities.',
+      id: "fullstack-project",
+      title: "Full-Stack Project Assessment",
+      description:
+        "Complete a comprehensive project that demonstrates your full-stack development capabilities.",
       icon: <Trophy className="h-6 w-6" />,
       data: quizWithAssignment,
       timeLimit: 120, // 2 hours for project work
       config: {
         allowReview: false,
-        showExplanations: false
-      }
-    }
-  ]
+        showExplanations: false,
+      },
+    },
+  ];
 
   if (activeQuiz) {
-    const quiz = quizzes.find(q => q.id === activeQuiz)
-    if (!quiz) return null
+    const quiz = quizzes.find((q) => q.id === activeQuiz);
+    if (!quiz) return null;
 
     return (
       <div className="min-h-screen bg-gray-50 py-8">
@@ -120,15 +154,19 @@ export const QuizExamples: React.FC = () => {
               <h2 className="text-xl font-bold text-gray-900 mb-4">
                 📋 Assignment: {quiz.data.assignment.title}
               </h2>
-              
+
               <div className="prose max-w-none mb-6">
-                <p className="text-gray-700">{quiz.data.assignment.description}</p>
+                <p className="text-gray-700">
+                  {quiz.data.assignment.description}
+                </p>
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Requirements */}
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">Requirements:</h3>
+                  <h3 className="font-semibold text-gray-900 mb-3">
+                    Requirements:
+                  </h3>
                   <ul className="space-y-2">
                     {quiz.data.assignment.requirements.map((req, index) => (
                       <li key={index} className="flex items-start space-x-2">
@@ -141,29 +179,44 @@ export const QuizExamples: React.FC = () => {
 
                 {/* Rubric */}
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">Grading Rubric:</h3>
+                  <h3 className="font-semibold text-gray-900 mb-3">
+                    Grading Rubric:
+                  </h3>
                   <div className="space-y-2">
-                    {Object.entries(quiz.data.assignment.rubric).map(([criteria, description]) => (
-                      <div key={criteria} className="border-l-4 border-blue-500 pl-3">
-                        <div className="font-medium text-gray-900">{criteria}</div>
-                        <div className="text-sm text-gray-600">{description}</div>
-                      </div>
-                    ))}
+                    {Object.entries(quiz.data.assignment.rubric).map(
+                      ([criteria, description]) => (
+                        <div
+                          key={criteria}
+                          className="border-l-4 border-blue-500 pl-3"
+                        >
+                          <div className="font-medium text-gray-900">
+                            {criteria}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {description}
+                          </div>
+                        </div>
+                      )
+                    )}
                   </div>
                 </div>
               </div>
 
               {quiz.data.assignment.submission_format && (
                 <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-1">Submission Format:</h4>
-                  <p className="text-blue-800">{quiz.data.assignment.submission_format}</p>
+                  <h4 className="font-medium text-blue-900 mb-1">
+                    Submission Format:
+                  </h4>
+                  <p className="text-blue-800">
+                    {quiz.data.assignment.submission_format}
+                  </p>
                 </div>
               )}
             </div>
           )}
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -178,16 +231,17 @@ export const QuizExamples: React.FC = () => {
             Interactive Quiz System
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Experience our comprehensive quiz system featuring multiple question types,
-            instant feedback, and detailed analytics. Choose a quiz below to get started.
+            Experience our comprehensive quiz system featuring multiple question
+            types, instant feedback, and detailed analytics. Choose a quiz below
+            to get started.
           </p>
         </div>
 
         {/* Quiz Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {quizzes.map((quiz) => {
-            const completion = completedQuizzes[quiz.id]
-            
+            const completion = completedQuizzes[quiz.id];
+
             return (
               <div
                 key={quiz.id}
@@ -202,11 +256,9 @@ export const QuizExamples: React.FC = () => {
                       {quiz.title}
                     </h3>
                   </div>
-                  
-                  <p className="text-gray-600 mb-4">
-                    {quiz.description}
-                  </p>
-                  
+
+                  <p className="text-gray-600 mb-4">{quiz.description}</p>
+
                   <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
                     <span>{quiz.data.questions.length} questions</span>
                     <span>{quiz.timeLimit} minutes</span>
@@ -218,13 +270,15 @@ export const QuizExamples: React.FC = () => {
                       <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
                         <div className="flex items-center space-x-2">
                           <Trophy className="h-4 w-4 text-green-600" />
-                          <span className="text-green-800 font-medium">Completed</span>
+                          <span className="text-green-800 font-medium">
+                            Completed
+                          </span>
                         </div>
                         <span className="text-green-700 font-bold">
                           {completion.percentageScore}%
                         </span>
                       </div>
-                      
+
                       {/* Action Buttons */}
                       <div className="flex space-x-2">
                         <button
@@ -252,7 +306,7 @@ export const QuizExamples: React.FC = () => {
                   )}
                 </div>
               </div>
-            )
+            );
           })}
         </div>
 
@@ -261,43 +315,51 @@ export const QuizExamples: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
             Quiz System Features
           </h2>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="text-center">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
                 <Brain className="h-6 w-6 text-blue-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Multiple Question Types</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">
+                Multiple Question Types
+              </h3>
               <p className="text-sm text-gray-600">
                 Multiple choice, short answer, and practical exercises
               </p>
             </div>
-            
+
             <div className="text-center">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
                 <Trophy className="h-6 w-6 text-green-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Instant Feedback</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">
+                Instant Feedback
+              </h3>
               <p className="text-sm text-gray-600">
                 Get immediate validation and explanations for answers
               </p>
             </div>
-            
+
             <div className="text-center">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-3">
                 <Code className="h-6 w-6 text-purple-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Practical Exercises</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">
+                Practical Exercises
+              </h3>
               <p className="text-sm text-gray-600">
                 Real-world coding challenges and project submissions
               </p>
             </div>
-            
+
             <div className="text-center">
               <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
                 <Book className="h-6 w-6 text-orange-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Progress Tracking</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">
+                Progress Tracking
+              </h3>
               <p className="text-sm text-gray-600">
                 Detailed analytics and performance monitoring
               </p>
@@ -311,7 +373,7 @@ export const QuizExamples: React.FC = () => {
           <p className="text-gray-300 mb-6">
             Here's how to integrate the Quiz component into your course pages:
           </p>
-          
+
           <pre className="bg-gray-900 rounded-lg p-4 overflow-x-auto text-sm">
             <code>{`import { Quiz } from './components/Quiz'
 import { sampleQuizData } from './data/sampleQuizData'
@@ -336,5 +398,5 @@ function CoursePage() {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

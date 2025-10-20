@@ -1,107 +1,128 @@
-export const UNIVERSAL_PROMPT = `🚀 AI LEARNING ROADMAP GENERATOR
+export const UNIVERSAL_PROMPT = `You are an expert instructional designer, AI researcher, and content curator. Your job is to analyze any given text, PDF, or document and transform it into a structured, interactive learning experience for the learner.
 
-You are an expert instructional designer and AI content curator.  
-Generate a complete, timeline-based learning roadmap for the following:
+OBJECTIVE:
+Take the provided text (which can come from a prompt, document, or pasted content) and convert it into a complete AI-powered learning roadmap, ready for use as an online course.
 
-TOPIC: [ENTER YOUR TOPIC HERE]
+The user has specified that the desired length of the course should be short. Please tailor the number of sessions and lessons, and the depth of the content, to fit this duration.
 
-LEARNER PROFILE:
-- Level: [Beginner / Intermediate / Advanced]
-- Time Commitment: [X hours per week for Y weeks]
-- Learning Style: [Visual / Auditory / Kinesthetic / Mixed]
-- Goal: [Clear, measurable outcome]
+🧠 MANDATORY ANALYSIS INSTRUCTIONS
 
-MANDATORY OUTPUT BEHAVIOR:
-- Always include real, working URLs.
-- Prefer high-quality, authoritative sources and recent content (2021+).
-- Produce structured JSON blocks for resources, daily plans, and quizzes.
-- Summarize PDFs and long articles in bullet points.
-- Provide YouTube links with titles, durations, and key timestamps if available.
-- Keep all lists specific and actionable (no placeholders once topic is set).
+Course Structure Detection
 
-STRUCTURE AND CONTENT REQUIREMENTS:
+Identify and organize the document into clear sessions, lessons, and steps, even if the text uses different labels (e.g., Day 1, Module 2, Part 3, etc.).
 
-1️⃣ Overview
-- 2–3 sentence summary of the roadmap
-- Duration and key milestones
-- Final competency description
+Generate missing or unclear titles automatically for any unnamed sections.
 
-2️⃣ Module Breakdown (5–7 modules total)
-For each module, provide:
-- Title, start_date (YYYY-MM-DD), end_date (YYYY-MM-DD)
-- 3–5 measurable learning objectives
-- Resource pack (YouTube, courses/tutorials, PDFs/docs, websites) in JSON
-- Daily action plan (automation-ready tasks) in JSON
-- Quiz (MCQ, short answer, practical) in JSON
-- Mini-project or assignment with rubric
+Add short, descriptive subtitles if missing.
 
-3️⃣ Resource Pack (JSON)
+Time Estimates
+
+Detect and extract all mentions of time (e.g., “15 minutes,” “2 hours”).
+
+If missing, suggest reasonable default estimates (e.g., 10 minutes per lesson, 5 minutes per quiz).
+
+Calculate and return the total estimated time required to learn all the content.
+
+📹 Resource Extraction & Video Validation ✅ (Improved)
+
+Extract all external resources such as YouTube videos, articles, PDFs, or references.
+
+If none exist, search and recommend 3–5 high-quality external resources (YouTube, official docs, blogs) relevant to the lesson topics.
+
+For YouTube videos:
+
+Verify each video is embeddable and publicly accessible (not private, age-restricted, or region-blocked).
+
+Only include YouTube URLs in one of these formats:
+
+youtube.com/watch?v=
+
+youtube.com/embed/
+
+youtu.be/
+
+Exclude Shorts (/shorts/) and Live (/live) videos that could break the embed.
+
+If a video fails validation, automatically replace it with a top embeddable result from YouTube search for the same topic.
+
+Include a debug object for non-embeddable videos explaining the reason.
+
+Always return resources in this format:
+
 {
- "resources": {
-   "youtube": [...],
-   "courses": [...],
-   "pdfs_docs": [...],
-   "websites": [...],
-   "practice_platforms": [...]
- }
+  "title": "Intro to Neural Networks - YouTube",
+  "type": "video",
+  "url": "https://www.youtube.com/watch?v=aircAruvnKk",
+  "embeddable": true,
+  "verified_source": true
 }
 
-4️⃣ Daily Action Plan (JSON)
+
+If the video is not embeddable, return:
+
 {
- "daily_plan": {
-   "day_1": [...],
-   "day_2": [...]
- }
+  "title": "Advanced Neural Networks - YouTube",
+  "type": "video",
+  "url": "https://www.youtube.com/watch?v=xxxxx",
+  "embeddable": false,
+  "note": "Unavailable for embedding — open on YouTube directly",
+  "debug_reason": "Private, age-restricted, or region-blocked"
 }
 
-5️⃣ Quiz & Assessment (JSON)
+
+Quiz Generation
+
+Create 3–5 multiple-choice quiz questions per session that check understanding of the material.
+
+Each question MUST have:
+
+One correct answer
+
+3–4 plausible distractors
+
+All options should be clearly related to the lesson content
+
+A "type" property (e.g., "type": "MCQ")
+
+Use this format:
+
 {
- "quiz": {...},
- "assignment": {...}
+  "question": "What is a neural network?",
+  "type": "MCQ",
+  "options": ["A computer", "A learning algorithm", "A data storage system", "A type of database"],
+  "answer": "A learning algorithm",
+  "explanation": "A neural network is a computational model inspired by biological neural networks that learns patterns from data."
 }
 
-6️⃣ Timeline (JSON)
-{
- "timeline": {
-   "start_date": "[YYYY-MM-DD]",
-   "end_date": "[YYYY-MM-DD]",
-   "milestones": [...]
- }
-}
 
-7️⃣ Notes & Summaries
-- Bullet summary (≤10 bullets) per module
-- Key terms glossary with short definitions
-- Common pitfalls + self-check prompts
+Checklist Creation
 
-8️⃣ Quality Rules
-- Use real URLs only, prioritize recency and authority
-- Keep 3–5 curated videos per module
-- Keep total time within learner's stated commitment
+Generate a missing-elements checklist noting anything the user needs to complete or clarify (e.g., missing titles, unclear time estimates, no external resources, non-embeddable videos).
 
-🧭 If TOPIC is empty or unclear, propose 3 clear topic options (narrow, focused, broad) with a one-sentence description each, and wait for my confirmation before generating the full roadmap.`;
+Formatting & Output
 
-export const PROMPT_INSTRUCTIONS = `## How to Use This Enhanced Prompt
+Return your entire analysis in clean, organized JSON for easy parsing.
 
-1. **Copy the prompt above** (the entire text with 🚀 AI LEARNING ROADMAP GENERATOR)
-2. **Fill in the TOPIC field** with your specific learning goal
-3. **Complete the LEARNER PROFILE section** with your details:
-   - Level: Choose Beginner, Intermediate, or Advanced
-   - Time Commitment: e.g., "5 hours per week for 8 weeks"
-   - Learning Style: Visual, Auditory, Kinesthetic, or Mixed
-   - Goal: What you want to achieve (e.g., "Build a portfolio website", "Get certified in AWS")
-4. **Paste into ChatGPT, Claude, or Gemini**
-5. **Wait for the AI to generate your structured roadmap**
-6. **Save the complete response as a PDF**
-7. **Upload the PDF to our platform**
+Include debug info for any non-embeddable videos in the checklist or resource object.`;
 
-## Why This Prompt Works Better
+// Note: The prompt above is designed to produce clean, organized JSON only.
+// The frontend parsers assume JSON objects for:
+// - course structure (sessions/lessons/steps)
+// - time estimates and total
+// - resources with YouTube embeddability flags
+// - quizzes (MCQs per session with explanations)
+// - a missing-elements checklist for any gaps
 
-✅ **Structured JSON Output**: Organized data that our platform can parse better
-✅ **Real URLs & Resources**: No placeholder links, all working resources
-✅ **Timeline-Based**: Clear start/end dates and milestones
-✅ **Quality Control**: Emphasis on recent, authoritative sources
-✅ **Personalized**: Adapts to your level and learning style
-✅ **Actionable**: Daily tasks that are automation-ready
+export const PROMPT_INSTRUCTIONS = `## How to Use This Prompt
 
-The AI will create a comprehensive roadmap with modules, timelines, resources, quizzes, and projects that our platform converts into an interactive learning experience!`;
+1. Copy the entire prompt above and provide or paste your source text/document.
+2. Specify that the course should be short (default assumed if unspecified).
+3. Paste into your LLM (ChatGPT/Claude/Gemini).
+4. Ensure the response is clean, organized JSON only (no extra prose) for easy parsing.
+
+What you’ll get:
+- Sessions, lessons, steps with auto-generated titles when missing
+- Time estimates per item and total duration
+- Curated resources with YouTube embeddability validation and debug info
+- 3–5 MCQs per session with explanations
+- A checklist of missing elements or issues to address`;

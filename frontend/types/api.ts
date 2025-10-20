@@ -26,6 +26,17 @@ export interface Course {
   key_skills?: string[];
 }
 
+// External resource item produced by the prompt's resource extraction
+export interface ExternalResource {
+  title: string;
+  type: "video" | "article" | "pdf" | "reference" | "website" | "course";
+  url: string;
+  embeddable?: boolean;
+  verified_source?: boolean;
+  note?: string;
+  debug_reason?: string; // reason when not embeddable/unavailable
+}
+
 export interface Lesson {
   lesson_number: number;
   title: string;

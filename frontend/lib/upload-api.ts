@@ -25,7 +25,10 @@ export interface UploadResponse<T = any> {
  */
 const uploadApi = axios.create({
   // Support multiple backends
-  baseURL: process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000",
+  baseURL:
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:8002",
   timeout: 60000, // 60 seconds for large files
   headers: {
     // Don't set Content-Type - let browser set it with boundary for FormData

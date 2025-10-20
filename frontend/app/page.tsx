@@ -65,7 +65,7 @@ export default function HomePage() {
       const data = response;
       if (data.course) {
         // Extract course_id from response (either top-level or from course object)
-        const courseId = data.course_id || data.course?.id;
+        const courseId = (data as any).course_id || data.course?.id;
         console.log("🆔 Course ID extracted:", courseId);
 
         if (!courseId) {
@@ -75,13 +75,60 @@ export default function HomePage() {
             "⚠️  No course ID in response, generating fallback:",
             fallbackId
           );
-          data.course_id = fallbackId;
           if (data.course) {
             data.course.id = fallbackId;
           }
         }
 
-        // Convert course data to format compatible with RoadmapSummary
+        // Helper to normalize mixed resources into a unified resourcePack
+        const normalizeResources = (resources: any): any => {
+          const pack = {
+            youtube: [] as any[],
+            articles: [] as any[],
+            pdfs: [] as any[],
+          };
+          if (!resources) return pack;
+
+          const items: any[] = Array.isArray(resources) ? resources : [];
+          for (const item of items) {
+            if (!item) continue;
+            const isString = typeof item === "string";
+            const url = isString ? item : item.url;
+            const title = isString ? item : item.title || url;
+            const type = isString ? undefined : item.type;
+
+            if (!url) continue;
+
+            // Classify
+            const isYouTube =
+              /(?:youtube\.com\/watch\?v=|youtube\.com\/embed\/|youtu\.be\/)\w+/i.test(
+                url
+              );
+            const isPDF = /\.pdf($|\?)/i.test(url) || type === "pdf";
+            const isArticle =
+              type === "article" ||
+              type === "website" ||
+              (!isYouTube && !isPDF);
+
+            const entry = {
+              title,
+              url,
+              duration: (isString ? undefined : item.duration) || undefined,
+              embeddable: isString ? undefined : item.embeddable,
+              verified_source: isString ? undefined : item.verified_source,
+              note: isString ? undefined : item.note,
+              debug_reason: isString ? undefined : item.debug_reason,
+            };
+
+            if (isYouTube) pack.youtube.push(entry);
+            else if (isPDF) pack.pdfs.push(entry);
+            else if (isArticle) pack.articles.push(entry);
+          }
+
+          return pack;
+        };
+
+        // Convert course data to format compatible with RoadmapSummary and lesson pages
         const courseWithLessons = {
           ...data.course,
           course_id: courseId, // Ensure course_id is available for RoadmapSummary
@@ -101,6 +148,7 @@ export default function HomePage() {
               ),
               learning_objectives: lesson.learning_objectives || [],
               resources: lesson.resources || [],
+              resourcePack: normalizeResources(lesson.resources),
               practice_exercises: lesson.practice_exercises || [],
               skill_tags: lesson.skill_tags || [],
             })) || [],
@@ -110,6 +158,22 @@ export default function HomePage() {
           learning_path: data.learning_guide?.learning_path,
           resource_library: data.learning_guide?.resource_library,
         };
+
+        // Ensure modules' lessons also get resourcePack so the lesson pages can render videos
+        if (Array.isArray(courseWithLessons.modules)) {
+          courseWithLessons.modules = courseWithLessons.modules.map(
+            (m: any) => ({
+              ...m,
+              lessons: Array.isArray(m.lessons)
+                ? m.lessons.map((l: any) => ({
+                    ...l,
+                    resourcePack:
+                      l.resourcePack || normalizeResources(l.resources),
+                  }))
+                : m.lessons,
+            })
+          );
+        }
 
         toast.success(
           `🎉 Course generated successfully! Created "${
