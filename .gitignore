@@ -1,0 +1,47 @@
+# Node
+node_modules/
+.pnp/
+.pnp.js
+.yarn/
+*.log
+.next/
+out/
+dist/
+build/
+
+# Env
+.env
+.env.*
+!.env.example
+frontend/.env.local
+frontend/.env.*
+
+# OS/Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+.tox/
+.venv/
+venv/
+env/
+
+# Misc
+*.sqlite3
+*.db
+*.sqlite
+*.sqlite-journal
+
+# Ignore nested repos/templates
+full-stack-fastapi-template/
+ai-learner-platform/
