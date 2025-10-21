@@ -4,6 +4,26 @@ import { useEffect, useMemo, useState } from "react";
 import { Loader2, ExternalLink, AlertCircle } from "lucide-react";
 
 type EmbedStatus = "loading" | "ok" | "blocked" | "invalid";
+type ValidateResponse = {
+  embeddable: boolean;
+  id: string | null;
+  embedUrl: string | null;
+  watchUrl: string | null;
+  reason:
+    | "ok"
+    | "invalid_url"
+    | "shorts"
+    | "live"
+    | "private"
+    | "age_restricted"
+    | "embed_disabled"
+    | "region_blocked"
+    | "not_found"
+    | "unknown";
+  title?: string;
+  author?: string;
+  thumbnail?: string;
+};
 type VideoMetadata = {
   title?: string;
   author?: string;
@@ -85,29 +105,38 @@ export function YouTubeEmbed({ url }: { url: string }) {
       console.log("✅ Extracted YouTube video ID:", videoId, "from:", url);
 
       try {
-        // Check if video exists and is embeddable via oEmbed
+        // Server validation and normalization (oEmbed + Data API)
         const res = await fetch(
-          `/api/youtube-oembed?url=${encodeURIComponent(url)}`
+          `/api/youtube-validate?url=${encodeURIComponent(url)}`
         );
 
         if (cancelled) return;
 
         if (res.ok) {
-          const data = await res.json();
-          console.log(`📹 Video ${videoId} is valid and embeddable`);
-
-          setMetadata({
-            title: data.title,
-            author: data.author_name,
-            thumbnail: data.thumbnail_url,
-          });
-          setStatus("ok");
+          const data: ValidateResponse = await res.json();
+          if (data.embeddable) {
+            console.log(`📹 Video ${videoId} is valid and embeddable`);
+            setMetadata({
+              title: data.title,
+              author: data.author,
+              thumbnail: data.thumbnail,
+            });
+            setStatus("ok");
+          } else {
+            console.warn(`⚠️ Video ${videoId} blocked: ${data.reason}`);
+            setMetadata({
+              title: data.title,
+              author: data.author,
+              thumbnail: data.thumbnail,
+            });
+            setStatus("blocked");
+          }
         } else {
           console.warn(`⚠️ Video ${videoId} not embeddable or not found`);
           setStatus("blocked");
         }
       } catch (err) {
-        console.warn("⚠️ oEmbed validation failed for:", videoId, err);
+        console.warn("⚠️ validation failed for:", videoId, err);
         if (!cancelled) {
           // On network error, still try to show embed with thumbnail
           setStatus("ok");
@@ -121,9 +150,13 @@ export function YouTubeEmbed({ url }: { url: string }) {
     };
   }, [url, videoId]);
 
-  // If truly invalid (bad ID), render nothing
+  // If truly invalid (bad ID), render a friendly fallback
   if (!videoId || status === "invalid") {
-    return null;
+    return (
+      <div className="w-full rounded-md border bg-secondary/30 p-3 text-sm text-muted-foreground flex items-center gap-2">
+        <AlertCircle className="h-4 w-4" /> Invalid or unsupported YouTube URL
+      </div>
+    );
   }
 
   // Loading state with thumbnail
@@ -157,6 +190,27 @@ export function YouTubeEmbed({ url }: { url: string }) {
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   if (origin) params.set("origin", origin);
+
+  // If blocked, show a resilient card with a link to watch on YouTube
+  if (status === "blocked") {
+    const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    return (
+      <div className="w-full rounded-md border bg-secondary/30 p-3 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <AlertCircle className="h-4 w-4" />
+          <span>Video unavailable to embed. You can still watch it on YouTube.</span>
+        </div>
+        <a
+          className="mt-2 inline-flex items-center gap-1 text-primary hover:underline"
+          href={watchUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Open on YouTube <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+      </div>
+    );
+  }
 
   // Show thumbnail initially, load iframe on click for better performance
   if (!showEmbed) {
@@ -208,7 +262,7 @@ export function YouTubeEmbed({ url }: { url: string }) {
     <div className="aspect-video w-full rounded-lg overflow-hidden">
       <iframe
         className="w-full h-full"
-        src={`https://www.youtube.com/embed/${videoId}?${params.toString()}&autoplay=1`}
+        src={`https://www.youtube-nocookie.com/embed/${videoId}?${params.toString()}&autoplay=1`}
         title={metadata?.title || "YouTube video player"}
         referrerPolicy="origin-when-cross-origin"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

@@ -4,7 +4,7 @@ import type { Resource } from "@/lib/types";
 import { YouTubeEmbed } from "./youtube-embed";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export function ResourcesPanel({ resources }: { resources: Resource[] }) {
   useEffect(() => {
@@ -57,6 +57,57 @@ export function ResourcesPanel({ resources }: { resources: Resource[] }) {
     "other links"
   );
 
+  // Batch-validate YouTube links to exclude non-embeddable and collect exclusions
+  const [validated, setValidated] = useState<
+    Array<{ url: string; embeddable: boolean; id: string | null; embedUrl: string | null }>
+  >([]);
+  const [excludedCount, setExcludedCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      if (youtubeLinks.length === 0) {
+        setValidated([]);
+        setExcludedCount(0);
+        return;
+      }
+      try {
+        const res = await fetch("/api/youtube-validate-batch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ urls: youtubeLinks.map((r) => r.url) }),
+        });
+        const data = await res.json();
+        if (cancelled) return;
+        const results = (data?.results || []) as Array<{
+          embeddable: boolean;
+          id: string | null;
+          embedUrl: string | null;
+          watchUrl: string | null;
+          reason: string;
+        }>;
+        setValidated(
+          results.map((r, i) => ({ url: youtubeLinks[i].url, embeddable: r.embeddable, id: r.id, embedUrl: r.embedUrl }))
+        );
+        setExcludedCount(results.filter((r) => !r.embeddable).length);
+      } catch {
+        // On failure, fall back to client-side embeds (handled individually)
+        setValidated(youtubeLinks.map((r) => ({ url: r.url, embeddable: true, id: null, embedUrl: null })));
+        setExcludedCount(0);
+      }
+    }
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [youtubeLinks.map((r) => r.url).join("|")]);
+
+  const filteredYouTube = useMemo(() => {
+    if (validated.length === 0) return youtubeLinks;
+    const allowed = new Set(validated.filter((v) => v.embeddable).map((v) => v.url));
+    return youtubeLinks.filter((r) => allowed.has(r.url));
+  }, [validated, youtubeLinks]);
+
   return (
     <Card className="mt-4 bg-secondary/50">
       <CardHeader>
@@ -66,18 +117,23 @@ export function ResourcesPanel({ resources }: { resources: Resource[] }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {youtubeLinks.length > 0 && (
+        {filteredYouTube.length > 0 && (
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-muted-foreground">
               Video Resources
             </h3>
-            {youtubeLinks.map((resource, index) => (
+            {filteredYouTube.map((resource, index) => (
               <div key={`yt-${index}`} className="space-y-2">
                 <h4 className="font-semibold text-sm">{resource.title}</h4>
                 <YouTubeEmbed url={resource.url} />
               </div>
             ))}
           </div>
+        )}
+        {excludedCount > 0 && (
+          <p className="text-xs text-muted-foreground">
+            {excludedCount} video{excludedCount === 1 ? " was" : "s were"} filtered out (not embeddable).
+          </p>
         )}
 
         {otherLinks.length > 0 && (
