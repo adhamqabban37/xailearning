@@ -5,6 +5,7 @@ A robust, production-ready YouTube embed component for Next.js with validation, 
 ## Features
 
 ✅ **Universal URL Support**: Handles all YouTube URL formats
+
 - Standard watch URLs: `https://www.youtube.com/watch?v=VIDEO_ID`
 - Share links: `https://youtu.be/VIDEO_ID`
 - Shorts: `https://www.youtube.com/shorts/VIDEO_ID`
@@ -13,22 +14,26 @@ A robust, production-ready YouTube embed component for Next.js with validation, 
 - URLs with tracking params (`?si=`, `&utm_source=`, etc.)
 
 ✅ **Validation Before Render**
+
 - Server-side oEmbed check (optional, for RSC/Route Handlers)
 - Client-side oEmbed validation fallback
 - Prevents "Video unavailable" errors
 
 ✅ **Runtime Error Handling**
+
 - Listens for YouTube Player API errors via postMessage
 - Maps error codes (2, 5, 100, 101, 150) to user-friendly messages
 - Automatically switches to fallback on error
 
 ✅ **Graceful Fallback UI**
+
 - High-quality thumbnail from YouTube
 - Clear error message
 - "Watch on YouTube" button → opens video in new tab
 - Maintains aspect ratio and visual consistency
 
 ✅ **Performance**
+
 - Lazy loading iframes
 - Minimal dependencies
 - Clean embed URLs (only `rel=0`, `modestbranding=1`, `controls=1`)
@@ -37,6 +42,7 @@ A robust, production-ready YouTube embed component for Next.js with validation, 
 ## Installation
 
 Files already created in your project:
+
 - `components/SafeYouTubePlayer.tsx` - Main component
 - `lib/youtube.ts` - Server validation utilities
 - `lib/urlTools.ts` - Enhanced URL parser (updated)
@@ -83,12 +89,7 @@ export default async function VideoPage() {
     return <p>Video not available: {validation.error}</p>;
   }
 
-  return (
-    <SafeYouTubePlayer
-      url={url}
-      title={validation.title}
-    />
-  );
+  return <SafeYouTubePlayer url={url} title={validation.title} />;
 }
 ```
 
@@ -110,18 +111,19 @@ export async function POST(req: NextRequest) {
 
 ### `<SafeYouTubePlayer>` Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `url` | `string` | ✅ | Any YouTube URL format |
-| `title` | `string` | ❌ | Video title (displays in fallback) |
-| `startSeconds` | `number` | ❌ | Start playback at this timestamp |
-| `className` | `string` | ❌ | Additional CSS classes |
+| Prop           | Type     | Required | Description                        |
+| -------------- | -------- | -------- | ---------------------------------- |
+| `url`          | `string` | ✅       | Any YouTube URL format             |
+| `title`        | `string` | ❌       | Video title (displays in fallback) |
+| `startSeconds` | `number` | ❌       | Start playback at this timestamp   |
+| `className`    | `string` | ❌       | Additional CSS classes             |
 
 ### `validateYouTubeUrl(url, timeoutMs?)`
 
 Server-side utility for pre-validation.
 
 **Parameters:**
+
 - `url`: YouTube URL to validate
 - `timeoutMs`: Request timeout (default: 5000)
 
@@ -133,8 +135,8 @@ interface YouTubeValidation {
   videoId: string | null;
   watchUrl: string | null;
   embedUrl: string | null;
-  title?: string;           // From oEmbed
-  thumbnailUrl?: string;    // From oEmbed
+  title?: string; // From oEmbed
+  thumbnailUrl?: string; // From oEmbed
   error?: string;
 }
 ```
@@ -155,13 +157,13 @@ Generates clean embed URL with safe params.
 
 The component automatically handles YouTube Player API errors:
 
-| Code | Meaning | Action |
-|------|---------|--------|
-| 2 | Invalid parameter | Show fallback |
-| 5 | HTML5 player error | Show fallback |
-| 100 | Video not found/private | Show fallback |
-| 101 | Embedding disabled (owner) | Show fallback |
-| 150 | Embedding disabled (owner) | Show fallback |
+| Code | Meaning                    | Action        |
+| ---- | -------------------------- | ------------- |
+| 2    | Invalid parameter          | Show fallback |
+| 5    | HTML5 player error         | Show fallback |
+| 100  | Video not found/private    | Show fallback |
+| 101  | Embedding disabled (owner) | Show fallback |
+| 150  | Embedding disabled (owner) | Show fallback |
 
 ## Testing
 
@@ -172,6 +174,7 @@ npm run test
 ```
 
 Tests cover:
+
 - URL extraction (watch, share, shorts, embed, legacy)
 - Tracking parameter handling
 - Embed URL generation

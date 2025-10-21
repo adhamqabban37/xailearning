@@ -44,7 +44,7 @@ export default function SafeYouTubePlayer({
           watchUrl
         )}&format=json`;
         const response = await fetch(oembedUrl);
-        
+
         if (!response.ok) {
           throw new Error(`oEmbed check failed: ${response.status}`);
         }
@@ -77,10 +77,11 @@ export default function SafeYouTubePlayer({
     const handleMessage = (event: MessageEvent) => {
       // YouTube Player API sends messages with error codes
       if (event.origin !== "https://www.youtube.com") return;
-      
+
       try {
-        const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-        
+        const data =
+          typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+
         if (data.event === "onError" && typeof data.info === "number") {
           const errorCode = data.info;
           setPlayerState("fallback");

@@ -83,3 +83,57 @@ Covered cases:
 - Embed URL formatting with required parameters.
 - Tracking parameter stripping and HTTP→HTTPS upgrade.
 - Validation logic for success, failure, HEAD→GET fallback.
+
+## YouTube Data API search (server-only)
+
+We integrate with YouTube Data API v3 securely on the server. Provide your API key in a server-only environment file (don’t prefix with NEXT_PUBLIC):
+
+```
+# .env.local (server only)
+YOUTUBE_API_KEY=YOUR_API_KEY
+```
+
+- Server util: `lib/server/youtubeData.ts` – typed `searchVideos(query, { maxResults, pageToken })` that returns titles, thumbnails, and `nextPageToken`.
+- API route: `GET /api/youtube/search?q=QUERY&maxResults=10&pageToken=...` – proxies server util without exposing your key to the client.
+- Demo page: `app/youtube-demo/page.tsx` – client UI (`components/YoutubeSearchClient.tsx`) calls the API and displays results with pagination.
+
+### Features
+
+- **Search YouTube videos**: Search for educational content directly within the platform
+- **Video Collection**: Save videos to your personal collection using localStorage
+- **Safe Player**: Play videos inline with SafeYouTubePlayer and graceful fallback
+- **Add/Remove**: Easily manage your collection with intuitive UI buttons
+- **Persistent Storage**: Your collection persists across sessions via localStorage
+
+### Navigation
+
+The app now includes a global navigation bar with quick access to:
+
+- Home: Main upload and prompt interface
+- Learn: Resource catalog with validated links
+- YouTube Search: Search and collect videos
+- Video Test: Demo page for SafeYouTubePlayer
+
+Example request:
+
+```powershell
+curl "http://localhost:3001/api/youtube/search?q=python%20tutorial&maxResults=6"
+```
+
+Response shape:
+
+```
+{
+  "videos": [
+    {
+      "id": "VIDEO_ID",
+      "title": "...",
+      "thumbnailUrl": "https://i.ytimg.com/...",
+      "channelTitle": "...",
+      "publishedAt": "2024-01-01T00:00:00Z",
+      "watchUrl": "https://www.youtube.com/watch?v=VIDEO_ID"
+    }
+  ],
+  "nextPageToken": "..."
+}
+```

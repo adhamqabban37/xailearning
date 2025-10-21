@@ -40,7 +40,7 @@ export async function validateYouTubeUrl(
   timeoutMs = 5000
 ): Promise<YouTubeValidation> {
   const videoId = extractYouTubeId(url);
-  
+
   if (!videoId) {
     return {
       valid: false,

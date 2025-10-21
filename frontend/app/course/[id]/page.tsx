@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import CourseYouTubeVideos from "@/components/CourseYouTubeVideos";
 
 export default function InteractiveCoursePage() {
   const params = useParams();
@@ -280,6 +281,16 @@ export default function InteractiveCoursePage() {
               </div>
             </div>
           </div>
+
+          {/* YouTube Videos Section */}
+          {courseData.title && (
+            <div className="mb-12">
+              <CourseYouTubeVideos
+                searchQuery={`${courseData.title} AI learning tutorial`}
+                maxResults={6}
+              />
+            </div>
+          )}
         </div>
       </div>
     </>

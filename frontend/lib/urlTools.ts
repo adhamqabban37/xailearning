@@ -70,21 +70,21 @@ export function extractYouTubeId(input: string): string | null {
       host === "music.youtube.com"
     ) {
       const segments = url.pathname.split("/").filter(Boolean);
-      
+
       // Handle /shorts/VIDEO_ID
       if (segments[0] === "shorts" && segments[1]) {
         return segments[1].split("?")[0]; // strip any inline params
       }
-      
+
       // Handle /embed/VIDEO_ID
       if (segments[0] === "embed" && segments[1]) {
         return segments[1].split("?")[0];
       }
-      
+
       // Handle /watch?v=VIDEO_ID
       const v = url.searchParams.get("v");
       if (v) return v;
-      
+
       // Handle /v/VIDEO_ID (legacy)
       if (segments[0] === "v" && segments[1]) {
         return segments[1].split("?")[0];

@@ -143,8 +143,8 @@ if (validation.valid) {
             <li className="flex items-start gap-2">
               <span className="text-blue-400 mt-1">→</span>
               <span>
-                <strong>Loading States:</strong> Spinner while validating, smooth
-                transitions
+                <strong>Loading States:</strong> Spinner while validating,
+                smooth transitions
               </span>
             </li>
           </ul>
