@@ -1,0 +1,26 @@
+[
+  {
+    "id": "yt1",
+    "type": "video",
+    "title": "Intro to Neural Networks",
+    "url": "https://youtu.be/dQw4w9WgXcQ",
+    "summary": "A high-level tour of neural network fundamentals.",
+    "benefit": "Gives you the mental model to follow the rest of the course."
+  },
+  {
+    "id": "yt2",
+    "type": "video",
+    "title": "Shorts: Backprop in 60s",
+    "url": "https://www.youtube.com/shorts/2vj37YE4hTA",
+    "summary": "Quick explainer on backpropagation mechanics.",
+    "benefit": "Helps you internalize gradients direction and magnitude."
+  },
+  {
+    "id": "lnk1",
+    "type": "link",
+    "title": "Article: Regularization 101",
+    "url": "http://example.com/article?utm_source=newsletter&si=foo",
+    "summary": "Overview of L1/L2 and dropout with examples.",
+    "benefit": "Know when to apply each technique to reduce overfitting."
+  }
+]
