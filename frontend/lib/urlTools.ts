@@ -46,46 +46,54 @@ export function upgradeToHttps(input: string): string {
   }
 }
 
-// Extracts YouTube video ID from various URL forms.
-// Supports: watch?v=, youtu.be/, shorts/, embed/
+/**
+ * Extracts YouTube video ID from various URL forms.
+ * Supports: watch?v=, youtu.be/, shorts/, embed/, with extra params (&t=, &list=, &si=...)
+ * Returns the 11-character video ID or null if invalid.
+ */
 export function extractYouTubeId(input: string): string | null {
   try {
     const url = new URL(input);
-    const host = url.hostname.replace(/^www\./, "");
+    const host = url.hostname.replace(/^www\./, "").replace(/^m\./, "");
 
+    // youtu.be share links
     if (host === "youtu.be") {
-      // e.g. https://youtu.be/VIDEO_ID
       const id = url.pathname.split("/").filter(Boolean)[0];
-      return id || null;
+      // Remove any trailing query params embedded in path (rare but possible)
+      return id ? id.split("?")[0] : null;
     }
 
+    // All youtube.com variants
     if (
       host === "youtube.com" ||
-      host === "m.youtube.com" ||
-      host === "music.youtube.com" ||
-      host === "youtube-nocookie.com"
+      host === "youtube-nocookie.com" ||
+      host === "music.youtube.com"
     ) {
       const segments = url.pathname.split("/").filter(Boolean);
-      // shorts/VIDEO_ID
-      if (segments[0] === "shorts" && segments[1]) return segments[1];
-      // embed/VIDEO_ID
-      if (segments[0] === "embed" && segments[1]) return segments[1];
-      // watch?v=VIDEO_ID
+      
+      // Handle /shorts/VIDEO_ID
+      if (segments[0] === "shorts" && segments[1]) {
+        return segments[1].split("?")[0]; // strip any inline params
+      }
+      
+      // Handle /embed/VIDEO_ID
+      if (segments[0] === "embed" && segments[1]) {
+        return segments[1].split("?")[0];
+      }
+      
+      // Handle /watch?v=VIDEO_ID
       const v = url.searchParams.get("v");
       if (v) return v;
-    }
-
-    // Also support full www.youtube.com domains
-    if (host === "www.youtube.com") {
-      const v = url.searchParams.get("v");
-      if (v) return v;
-      const segs = url.pathname.split("/").filter(Boolean);
-      if (segs[0] === "shorts" && segs[1]) return segs[1];
-      if (segs[0] === "embed" && segs[1]) return segs[1];
+      
+      // Handle /v/VIDEO_ID (legacy)
+      if (segments[0] === "v" && segments[1]) {
+        return segments[1].split("?")[0];
+      }
     }
 
     return null;
   } catch {
+    // Not a valid URL
     return null;
   }
 }
@@ -97,14 +105,20 @@ export function normalizeYouTube(input: string): string {
   return `https://www.youtube.com/watch?v=${id}`;
 }
 
-export function toEmbedUrl(videoId: string): string {
-  const origin = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3001";
+/**
+ * Returns a clean embed URL for a given video ID.
+ * Only includes safe params: rel=0, modestbranding=1, controls=1
+ * Optionally adds start= if startSeconds is provided.
+ */
+export function toEmbedUrl(videoId: string, startSeconds?: number): string {
   const params = new URLSearchParams({
     rel: "0",
     modestbranding: "1",
-    enablejsapi: "1",
-    origin,
+    controls: "1",
   });
+  if (startSeconds) {
+    params.set("start", String(Math.floor(startSeconds)));
+  }
   return `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
 }
 
