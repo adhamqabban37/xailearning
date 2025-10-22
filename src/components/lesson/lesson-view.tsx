@@ -148,7 +148,12 @@ export function LessonView({ initialSession }: LessonViewProps) {
             <AskTheDocumentCard />
 
             {session.lessons.map((lesson) => (
-              <div key={lesson.id} className="flex items-start gap-4">
+              <div 
+                key={lesson.id} 
+                className="flex items-start gap-4"
+                data-lesson-id={lesson.id}
+                data-completed={isStepCompleted(lesson.id)}
+              >
                 <Checkbox
                   id={`cb-${lesson.id}`}
                   className="mt-8"
@@ -168,7 +173,15 @@ export function LessonView({ initialSession }: LessonViewProps) {
                     <ResourcesPanel resources={lesson.resources} />
                   )}
                   {lesson.quiz && lesson.quiz.length > 0 && (
-                    <QuizCard questions={lesson.quiz} />
+                    <QuizCard 
+                      questions={lesson.quiz}
+                      onQuizComplete={() => {
+                        // Optionally auto-check the lesson as complete when quiz is done
+                        if (!isStepCompleted(lesson.id)) {
+                          handleStepComplete(lesson.id, true);
+                        }
+                      }}
+                    />
                   )}
                 </div>
               </div>
@@ -179,6 +192,7 @@ export function LessonView({ initialSession }: LessonViewProps) {
                 onNextSession={handleNextSession}
                 onFinish={handleFinish}
                 isCourseComplete={courseIsComplete}
+                courseTitle={storedCourse?.course.course_title}
               />
             )}
           </div>

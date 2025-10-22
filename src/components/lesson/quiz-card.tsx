@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { QuizQuestion } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,25 +12,37 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, XCircle, ArrowDown } from "lucide-react";
 import { QuestionMarkIcon } from "../ui/icons";
 
 interface QuizCardProps {
   questions: QuizQuestion[];
+  onQuizComplete?: () => void;
 }
 
 type AnswerState = "unanswered" | "correct" | "incorrect";
 
-export function QuizCard({ questions }: QuizCardProps) {
+export function QuizCard({ questions, onQuizComplete }: QuizCardProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [answerState, setAnswerState] = useState<AnswerState>("unanswered");
   const [correctAnswers, setCorrectAnswers] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [hasScrolled, setHasScrolled] = useState(false);
+
+  // Trigger callback when quiz completes - run only once
+  useEffect(() => {
+    if (isCompleted && !hasScrolled) {
+      // Notify parent component if callback provided
+      onQuizComplete?.();
+      setHasScrolled(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCompleted]);
 
   if (isCompleted) {
     return (
-      <Card className="bg-secondary/60 border-secondary shadow-sm text-center">
+      <Card className="bg-secondary/60 border-secondary shadow-sm">
         <CardHeader>
           <div className="mx-auto text-secondary-foreground/80">
             <CheckCircle className="w-12 h-12" />
@@ -41,6 +53,59 @@ export function QuizCard({ questions }: QuizCardProps) {
             correctly.
           </CardDescription>
         </CardHeader>
+        <CardFooter className="flex justify-center">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              // Find the current quiz's lesson container
+              const currentLesson = document.querySelector('.quiz-card')?.closest('[data-lesson-id]');
+              
+              if (currentLesson) {
+                // Get all lessons in the container
+                const allLessons = Array.from(document.querySelectorAll('[data-lesson-id]'));
+                const currentIndex = allLessons.indexOf(currentLesson as Element);
+                
+                // Find the next lesson
+                const nextLesson = allLessons[currentIndex + 1];
+                
+                if (nextLesson) {
+                  // Scroll to next lesson
+                  nextLesson.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center',
+                    inline: 'nearest'
+                  });
+                  
+                  // Focus on the checkbox for accessibility
+                  setTimeout(() => {
+                    const checkbox = nextLesson.querySelector('input[type="checkbox"]') as HTMLElement;
+                    checkbox?.focus();
+                  }, 500);
+                } else {
+                  // If no next lesson, scroll to completion card
+                  setTimeout(() => {
+                    const completionCard = document.querySelector('[class*="completion-card"]') as HTMLElement;
+                    if (completionCard) {
+                      completionCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      // Show a toast notification
+                      const event = new CustomEvent('show-toast', {
+                        detail: {
+                          title: '🎉 You\'ve reached the end!',
+                          description: 'Great work completing all lessons in this session.'
+                        }
+                      });
+                      window.dispatchEvent(event);
+                    }
+                  }, 300);
+                }
+              }
+            }}
+          >
+            <ArrowDown className="w-4 h-4 mr-2" />
+            Continue to Next Lesson
+          </Button>
+        </CardFooter>
       </Card>
     );
   }

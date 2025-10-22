@@ -118,10 +118,22 @@ export async function generateCourseFromText(
 
     const analysis = await Promise.race([analysisPromise, timeoutPromise]);
 
+    console.log("📊 Analysis result:", {
+      hasAnalysis: !!analysis,
+      hasModules: !!(analysis?.modules),
+      moduleCount: analysis?.modules?.length || 0,
+      courseTitle: analysis?.course_title
+    });
+
     if (!analysis || !analysis.modules || analysis.modules.length === 0) {
+      console.error("❌ Empty or invalid analysis returned from AI");
       return {
         error:
-          "The AI could not analyze the provided text. Please try again with different content.",
+          "The AI could not generate a valid course structure. This can happen if:\n" +
+          "• The content is too short or unclear\n" +
+          "• The AI service is overloaded\n" +
+          "• The text doesn't contain structured educational content\n\n" +
+          "Try providing more detailed, structured content (e.g., lesson outlines, chapter headings).",
       };
     }
 

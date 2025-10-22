@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, ExternalLink, AlertCircle } from "lucide-react";
 
-type EmbedStatus = "loading" | "ok" | "blocked" | "invalid";
+type EmbedStatus = "loading" | "ok" | "blocked" | "invalid" | "deleted";
 type ValidateResponse = {
   embeddable: boolean;
   id: string | null;
@@ -12,6 +12,7 @@ type ValidateResponse = {
   reason:
     | "ok"
     | "invalid_url"
+    | "playlist"
     | "shorts"
     | "live"
     | "private"
@@ -23,11 +24,14 @@ type ValidateResponse = {
   title?: string;
   author?: string;
   thumbnail?: string;
+  pending?: boolean;
+  debugReason?: string;
 };
 type VideoMetadata = {
   title?: string;
   author?: string;
   thumbnail?: string;
+  reason?: string;
 };
 
 function extractYouTubeId(rawUrl: string): string | null {
@@ -78,11 +82,15 @@ function extractYouTubeId(rawUrl: string): string | null {
   return match && match[2].length === 11 ? match[2] : null;
 }
 
-export function YouTubeEmbed({ url }: { url: string }) {
-  const videoId = useMemo(() => extractYouTubeId(url), [url]);
+export function YouTubeEmbed({ url, title }: { url: string; title?: string }) {
+  // Allow overriding the video id when we suggest a replacement
+  const [overrideId, setOverrideId] = useState<string | null>(null);
+  const videoId = useMemo(() => overrideId || extractYouTubeId(url), [url, overrideId]);
   const [status, setStatus] = useState<EmbedStatus>("loading");
   const [metadata, setMetadata] = useState<VideoMetadata | null>(null);
   const [showEmbed, setShowEmbed] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestionNote, setSuggestionNote] = useState<string | null>(null);
 
   // Generate thumbnail URLs (YouTube provides multiple resolutions)
   const thumbnailUrl = videoId
@@ -124,12 +132,54 @@ export function YouTubeEmbed({ url }: { url: string }) {
             setStatus("ok");
           } else {
             console.warn(`⚠️ Video ${videoId} blocked: ${data.reason}`);
+            
+            // Detect deleted/not found videos
+            const isDeleted = data.reason === "not_found" || 
+                            data.debugReason?.includes("not_found") ||
+                            (!data.title && !data.author);
+            
             setMetadata({
-              title: data.title,
+              title: data.title || (isDeleted ? "Video Not Available" : "Restricted Video"),
               author: data.author,
               thumbnail: data.thumbnail,
+              reason: data.reason,
             });
-            setStatus("blocked");
+            setStatus(isDeleted ? "deleted" : "blocked");
+
+            // Quick troubleshooting: try to suggest a similar video using the title
+            if (!cancelled && title) {
+              try {
+                setSuggesting(true);
+                const r = await fetch("/api/youtube-repair", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ url, title }),
+                });
+                if (!cancelled && r.ok) {
+                  const rep: any = await r.json();
+                  if (rep?.pending) {
+                    setSuggestionNote("Alternative submitted for admin review");
+                  } else if (rep?.replaced && rep?.embeddable && rep?.id) {
+                    // Use replacement id for thumbnails/iframe and clear the old title per request
+                    setOverrideId(rep.id);
+                    setMetadata({
+                      title: undefined, // erase original title display
+                      author: rep.author,
+                      thumbnail: rep.thumbnail,
+                    });
+                    setSuggestionNote(
+                      rep.title ? `Suggested: ${rep.title}` : "Suggested an alternative video"
+                    );
+                    setStatus("ok");
+                    setShowEmbed(false); // show poster again; user can click to play
+                  }
+                }
+              } catch (e) {
+                // ignore suggestion failure; user can still open on YouTube
+              } finally {
+                if (!cancelled) setSuggesting(false);
+              }
+            }
           }
         } else {
           console.warn(`⚠️ Video ${videoId} not embeddable or not found`);
@@ -138,8 +188,8 @@ export function YouTubeEmbed({ url }: { url: string }) {
       } catch (err) {
         console.warn("⚠️ validation failed for:", videoId, err);
         if (!cancelled) {
-          // On network error, still try to show embed with thumbnail
-          setStatus("ok");
+          // On network error, prefer safe fallback to avoid broken iframes
+          setStatus("blocked");
         }
       }
     }
@@ -191,23 +241,158 @@ export function YouTubeEmbed({ url }: { url: string }) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   if (origin) params.set("origin", origin);
 
-  // If blocked, show a resilient card with a link to watch on YouTube
+  // Helper function to get user-friendly reason message
+  const getReasonMessage = (reason?: string) => {
+    switch (reason) {
+      case "private": return "This video is private";
+      case "age_restricted": return "This video is age-restricted";
+      case "embed_disabled": return "Embedding disabled by owner";
+      case "region_blocked": return "This video is not available in your region";
+      case "not_found": return "This video has been deleted or is unavailable";
+      case "shorts": return "YouTube Shorts cannot be embedded";
+      case "live": return "This is a live stream";
+      case "playlist": return "Playlists are not supported";
+      default: return "Video unavailable to embed";
+    }
+  };
+
+  // Enhanced fallback card for deleted videos
+  if (status === "deleted") {
+    return (
+      <div className="w-full rounded-lg border border-destructive/50 bg-destructive/5 overflow-hidden">
+        <div className="aspect-video w-full bg-muted/50 flex items-center justify-center relative">
+          {thumbnailUrl && (
+            <img
+              src={thumbnailUrl}
+              alt="Deleted video"
+              className="w-full h-full object-cover opacity-30"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+          )}
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4">
+            <AlertCircle className="w-12 h-12 text-destructive" />
+            <p className="text-sm font-medium text-center">Video Not Available</p>
+            <p className="text-xs text-muted-foreground text-center">
+              This video has been deleted or is no longer accessible
+            </p>
+          </div>
+        </div>
+        <div className="p-3 space-y-2">
+          <p className="text-sm font-medium text-destructive">
+            {metadata?.title || "Deleted Video"}
+          </p>
+          {metadata?.author && (
+            <p className="text-xs text-muted-foreground">by {metadata.author}</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // If blocked, show a resilient card with a link to watch on YouTube and allow manual suggestion
   if (status === "blocked") {
     const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    const reasonMessage = getReasonMessage(metadata?.reason);
+    
     return (
-      <div className="w-full rounded-md border bg-secondary/30 p-3 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <AlertCircle className="h-4 w-4" />
-          <span>Video unavailable to embed. You can still watch it on YouTube.</span>
-        </div>
-        <a
-          className="mt-2 inline-flex items-center gap-1 text-primary hover:underline"
-          href={watchUrl}
-          target="_blank"
-          rel="noopener noreferrer"
+      <div className="w-full rounded-lg border bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+        {/* Thumbnail section */}
+        <div 
+          className="aspect-video w-full bg-muted relative group cursor-pointer"
+          onClick={() => window.open(watchUrl, "_blank")}
         >
-          Open on YouTube <ExternalLink className="h-3.5 w-3.5" />
-        </a>
+          {thumbnailUrl && (
+            <img
+              src={thumbnailUrl}
+              alt={metadata?.title || "YouTube video"}
+              className="w-full h-full object-cover transition-transform group-hover:scale-105"
+              onError={(e) => {
+                if (fallbackThumbnail && (e.target as HTMLImageElement).src !== fallbackThumbnail) {
+                  (e.target as HTMLImageElement).src = fallbackThumbnail;
+                } else {
+                  (e.target as HTMLImageElement).style.display = "none";
+                }
+              }}
+            />
+          )}
+          <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors flex items-center justify-center">
+            <div className="text-center space-y-2">
+              <AlertCircle className="w-12 h-12 text-white mx-auto" />
+              <p className="text-white text-sm font-medium px-4">{reasonMessage}</p>
+            </div>
+          </div>
+        </div>
+        
+        {/* Info section */}
+        <div className="p-4 space-y-3">
+          <div>
+            <h3 className="text-sm font-semibold line-clamp-2">
+              {metadata?.title || "Restricted Video"}
+            </h3>
+            {metadata?.author && (
+              <p className="text-xs text-muted-foreground mt-1">by {metadata.author}</p>
+            )}
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            <a
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/20 rounded-md transition-colors"
+              href={watchUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open on YouTube <ExternalLink className="h-3 w-3" />
+            </a>
+            
+            {title && !suggesting && !suggestionNote && (
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium hover:bg-secondary rounded-md transition-colors border"
+                onClick={async () => {
+                  try {
+                    setSuggesting(true);
+                    const r = await fetch("/api/youtube-repair", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ url, title }),
+                    });
+                    if (r.ok) {
+                      const rep: any = await r.json();
+                      if (rep?.pending) {
+                        setSuggestionNote("Alternative submitted for admin review");
+                      } else if (rep?.replaced && rep?.embeddable && rep?.id) {
+                        setOverrideId(rep.id);
+                        setMetadata({ title: undefined, author: rep.author, thumbnail: rep.thumbnail });
+                        setSuggestionNote(rep.title ? `Suggested: ${rep.title}` : "Suggested an alternative");
+                        setStatus("ok");
+                        setShowEmbed(false);
+                      }
+                    }
+                  } finally {
+                    setSuggesting(false);
+                  }
+                }}
+                disabled={suggesting}
+              >
+                {suggesting ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" /> Finding alternative...
+                  </>
+                ) : (
+                  "Find similar video"
+                )}
+              </button>
+            )}
+          </div>
+          
+          {suggestionNote && (
+            <div className="text-xs text-muted-foreground bg-muted/50 rounded p-2">
+              {suggestionNote}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -244,12 +429,18 @@ export function YouTubeEmbed({ url }: { url: string }) {
             </svg>
           </div>
         </div>
-        {metadata?.title && (
+        {/* If we suggested a replacement, hide original title; optionally show a small note */}
+        {(metadata?.title || suggestionNote) && (
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3">
-            <p className="text-white text-sm font-medium line-clamp-2">
-              {metadata.title}
-            </p>
-            {metadata.author && (
+            {metadata?.title && (
+              <p className="text-white text-sm font-medium line-clamp-2">
+                {metadata.title}
+              </p>
+            )}
+            {suggestionNote && (
+              <p className="text-white/90 text-xs">{suggestionNote}</p>
+            )}
+            {metadata?.author && (
               <p className="text-white/70 text-xs mt-1">{metadata.author}</p>
             )}
           </div>

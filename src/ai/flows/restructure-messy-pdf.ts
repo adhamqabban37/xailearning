@@ -33,8 +33,11 @@ export async function analyzeDocument(
       : input.textContent;
 
   console.log(`📝 Content length: ${truncatedContent.length} chars`);
+  console.log(`📝 First 200 chars of content:`, truncatedContent.substring(0, 200));
 
-  const prompt = `Create a structured course in JSON format from this text. Requirements:
+  const prompt = `You are creating an educational course. You MUST return a valid JSON object with at least 1 module.
+
+Create a structured course in JSON format from this text. Requirements:
 - 2-3 modules with 2-3 lessons each
 - Each lesson: title, 3-5 key points, 2-3 MCQs (4 options, 1 correct)
 
@@ -57,9 +60,11 @@ CRITICAL REQUIREMENTS FOR RESOURCES:
    * DO NOT make up URLs - use real ones you know exist
 
 - Include 1-2 video resources AND 1-2 article/documentation URLs per lesson
-- Output ONLY the JSON object
+- Output ONLY the JSON object - NO explanatory text before or after
 
-JSON structure:
+CRITICAL: Your response must be ONLY valid JSON starting with { and ending with }
+
+Required JSON structure (you MUST include at least 1 module with 1 lesson):
 {
   "course_title": "Course Title Here",
   "modules": [{
@@ -77,7 +82,7 @@ JSON structure:
       }],
       "resources": {
         "youtube": [
-          {"title": "Real Video Title from Known Channel", "url": "https://www.youtube.com/watch?v=REAL_VIDEO_ID"}
+          {"title": "Real Video Title from Known Channel", "url": "https://www.youtube.com/watch?v=kqtD5dpn9C8"}
         ],
         "articles": [
           {"title": "Real Article Title", "url": "https://en.wikipedia.org/wiki/Real_Topic"}
@@ -88,9 +93,14 @@ JSON structure:
   }]
 }
 
-REMEMBER: Every URL must be a REAL, COMPLETE URL that actually exists. No placeholders, no made-up URLs.
+IMPORTANT RULES:
+1. Always include AT LEAST 1 module in the "modules" array
+2. Each module must have AT LEAST 1 lesson
+3. Every URL must be REAL and COMPLETE (no placeholders)
+4. Return ONLY JSON - no markdown, no explanations
+5. If the text is unclear, create a basic course structure based on the general topic
 
-Text: ${truncatedContent}`;
+Text to analyze: ${truncatedContent}`;
 
   console.log("🤖 Streaming response from DeepSeek...");
   let out = "";
@@ -111,6 +121,9 @@ Text: ${truncatedContent}`;
     `✅ DeepSeek completed. Total: ${out.length} chars in ${chunkCount} chunks`
   );
 
+  // Log raw response for debugging
+  console.log("🔍 Raw AI response (first 500 chars):", out.substring(0, 500));
+
   // Extract JSON from response (handle markdown code blocks)
   let jsonStr = out.trim();
   if (jsonStr.includes("```json")) {
@@ -123,7 +136,64 @@ Text: ${truncatedContent}`;
 
   // Find the first complete JSON object
   const match = jsonStr.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error("Ollama did not return a valid JSON object.");
+  if (!match) {
+    console.error("❌ No valid JSON found in AI response");
+    console.error("Full response:", out);
+    throw new Error("AI did not return a valid JSON object. Please try again.");
+  }
 
-  return JSON.parse(match[0]);
+  console.log("📦 Extracted JSON (first 300 chars):", match[0].substring(0, 300));
+
+  let parsed;
+  try {
+    parsed = JSON.parse(match[0]);
+  } catch (parseError: any) {
+    console.error("❌ JSON parse error:", parseError.message);
+    console.error("Attempted to parse:", match[0].substring(0, 500));
+    throw new Error("AI returned malformed JSON. Please try again.");
+  }
+
+  // Validate structure
+  if (!parsed.modules || !Array.isArray(parsed.modules) || parsed.modules.length === 0) {
+    console.error("❌ AI returned empty or invalid modules:", parsed);
+    console.log("🔧 Creating fallback minimal course structure...");
+    
+    // Create a minimal fallback course based on the content
+    const fallbackTitle = parsed.course_title || "Introduction to " + truncatedContent.substring(0, 50).trim();
+    return {
+      course_title: fallbackTitle,
+      modules: [{
+        module_title: "Getting Started",
+        lessons: [{
+          lesson_title: "Introduction",
+          key_points: [
+            "Overview of the topic",
+            "Key concepts to understand",
+            "Learning objectives"
+          ],
+          time_estimate_minutes: 15,
+          quiz: [{
+            question: "What is the main topic of this course?",
+            type: "MCQ",
+            options: [
+              fallbackTitle,
+              "Unrelated topic A",
+              "Unrelated topic B",
+              "None of the above"
+            ],
+            answer: fallbackTitle,
+            explanation: "This course focuses on " + fallbackTitle
+          }],
+          resources: {
+            youtube: [],
+            articles: [],
+            pdfs_docs: []
+          }
+        }]
+      }]
+    };
+  }
+
+  console.log("✅ Successfully parsed course with", parsed.modules.length, "modules");
+  return parsed;
 }
